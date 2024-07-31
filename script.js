@@ -107,12 +107,17 @@ document.addEventListener('DOMContentLoaded', (event) => {
           document.getElementById(`successRate-${row}-${col}`).innerText = successRate + '%';
           const ppg1Cell = document.getElementById(`ppg1Value-${row}-${col}`);
           ppg1Cell.innerText = ppg1Value + '%';
-          ppg1Cell.style.backgroundColor = getHeatmapColor(ppg1Value);
-        } else {
-          document.getElementById(`successRate-${row}-${col}`).innerText = '';
-          const ppg1Cell = document.getElementById(`ppg1Value-${row}-${col}`);
-          ppg1Cell.innerText = '';
-          ppg1Cell.style.backgroundColor = '';
+            
+        // Determine background color and text color
+        const bgColor = getHeatmapColor(ppg1Value);
+        ppg1Cell.style.backgroundColor = bgColor;
+        ppg1Cell.style.color = bgColor === '#ff0000' ? '#ffffff' : '#000000'; // White text on red background, black otherwise
+      } else {
+        document.getElementById(`successRate-${row}-${col}`).innerText = '';
+        const ppg1Cell = document.getElementById(`ppg1Value-${row}-${col}`);
+        ppg1Cell.innerText = '';
+        ppg1Cell.style.backgroundColor = '';
+        ppg1Cell.style.color = ''; // Reset text color
         }
       }
     }
