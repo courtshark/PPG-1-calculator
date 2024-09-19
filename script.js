@@ -86,8 +86,36 @@ document.addEventListener('DOMContentLoaded', (event) => {
 function calculate() {
   const numeratorInputs = document.querySelectorAll('.inputNumerator');
   const denominatorInputs = document.querySelectorAll('.inputDenominator');
+  const messageDiv = document.getElementById('message');
 
-  // Calculate total numerator and total denominator for all subgroups
+  // Step 1: Count valid subgroups (those with at least one numerator and denominator filled in)
+  let validSubgroups = 0;
+  for (let row = 0; row < 9; row++) {
+    let hasValidEntry = false;
+    for (let col = 0; col < 4; col++) {
+      const numerator = parseFloat(numeratorInputs[row * 4 + col].value);
+      const denominator = parseFloat(denominatorInputs[row * 4 + col].value);
+
+      if (!isNaN(numerator) && numerator > 0 && !isNaN(denominator) && denominator > 0) {
+        hasValidEntry = true;
+        break;  // As soon as we find one valid entry in any year for this subgroup, we can count it as valid.
+      }
+    }
+    if (hasValidEntry) {
+      validSubgroups += 1;
+    }
+  }
+
+  // Step 2: Show warning if fewer than two subgroups have been filled
+  if (validSubgroups < 2) {
+    messageDiv.innerText = "At least two subgroups must be filled in to calculate results.";
+    clearCalculations();  // Clear the table if not enough data is provided
+    return;
+  } else {
+    messageDiv.innerText = ""; // Clear message when valid
+  }
+
+  // Step 3: Perform the calculation if there are two or more valid subgroups
   const totalNumerator = Array.from(numeratorInputs).reduce((sum, input) => sum + (parseFloat(input.value) || 0), 0);
   const totalDenominator = Array.from(denominatorInputs).reduce((sum, input) => sum + (parseFloat(input.value) || 0), 0);
 
@@ -97,19 +125,19 @@ function calculate() {
       const denominator = parseFloat(denominatorInputs[row * 4 + col].value) || 0;
 
       if (denominator > 0) {
-        // Step 1: Calculate success rate for the subgroup
-        const successRate = (numerator / denominator) * 100;
+        // Step 4: Calculate success rate for the ethnicity
+        const successRate = numerator / denominator;
 
-        // Step 2: Calculate adjusted success rate for all other subgroups
+        // Step 5: Calculate success rate for all other ethnicities (excluding this one)
         const adjustedNumerator = totalNumerator - numerator;
         const adjustedDenominator = totalDenominator - denominator;
-        const adjustedSuccessRate = adjustedDenominator > 0 ? (adjustedNumerator / adjustedDenominator) * 100 : 0;
+        const adjustedSuccessRate = adjustedDenominator > 0 ? adjustedNumerator / adjustedDenominator : 0;
 
-        // Step 3: Calculate PPG-1 value
-        const ppg1Value = successRate - adjustedSuccessRate;
+        // Step 6: Calculate PPG-1 value
+        const ppg1Value = (successRate - adjustedSuccessRate) * 100;  // Convert to percentage
 
         // Update the table with the calculated values
-        document.getElementById(`successRate-${row}-${col}`).innerText = successRate.toFixed(1) + '%';
+        document.getElementById(`successRate-${row}-${col}`).innerText = (successRate * 100).toFixed(1) + '%';
         const ppg1Cell = document.getElementById(`ppg1Value-${row}-${col}`);
         ppg1Cell.innerText = ppg1Value.toFixed(1) + '%';
 
@@ -128,15 +156,4 @@ function calculate() {
     }
   }
 }
-  
-  function getHeatmapColor(value) {
-    const numValue = parseFloat(value);
-    if (numValue > 0) {
-      return '#FEEDDE'; // Neutral
-    } else if (numValue >= -10) {
-      return '#ffc7ce'; // Pink
-    } else {
-      return '#ff0000'; // Red
-    }
-  }
-  
+
