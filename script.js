@@ -1,159 +1,82 @@
 document.addEventListener('DOMContentLoaded', (event) => {
-    const numeratorInputs = document.querySelectorAll('.inputNumerator');
-    const denominatorInputs = document.querySelectorAll('.inputDenominator');
-    const subgroupInputs = document.querySelectorAll('.inputSubgroup');
-    const yearHeaderInputs = document.querySelectorAll('.yearHeader');
-  
-    // Initialize subgroup names across all tables
-    initializeSubgroups();
-    initializeYearHeaders();
-  
-    // Add event listener for each input field
-    numeratorInputs.forEach(input => input.addEventListener('keydown', handleEnterPress));
-    denominatorInputs.forEach(input => input.addEventListener('keydown', handleEnterPress));
-  
-    subgroupInputs.forEach((input, index) => {
-      input.addEventListener('input', () => updateSubgroup(index, input.value));
-    });
-  
-    yearHeaderInputs.forEach((input, index) => {
-      if (index % 4 === 0) { // Only the first column header is editable
-        input.addEventListener('input', () => updateYearHeaders(input.value));
-      }
-    });
-  
-    document.querySelectorAll('.inputNumerator, .inputDenominator').forEach(input => {
-      input.addEventListener('input', () => {
-        console.log('Numerator or Denominator changed, recalculating...');
-        calculate();
-      });
+  const numeratorInputs = document.querySelectorAll('.inputNumerator');
+  const denominatorInputs = document.querySelectorAll('.inputDenominator');
+
+  // Add event listener to recalculate when numerator or denominator changes
+  document.querySelectorAll('.inputNumerator, .inputDenominator').forEach(input => {
+    input.addEventListener('input', () => {
+      console.log('Numerator or Denominator changed, recalculating...');
+      calculate();
     });
   });
-  
-  function handleEnterPress(event) {
-    if (event.key === 'Enter') {
-      event.preventDefault(); // Prevent the default behavior of the Enter key
-  
-      const currentId = event.target.id;
-      const [prefix, row, col] = currentId.split('-');
-      const nextRow = parseInt(row) + 1;
-      const nextId = `${prefix}-${nextRow}-${col}`;
-      const nextInput = document.getElementById(nextId);
-  
-      if (nextInput) {
-        nextInput.focus();
-      }
-    }
-  }
-  
-  function initializeSubgroups() {
-    const subgroups = document.querySelectorAll('#numeratorTable .inputSubgroup');
-    subgroups.forEach((input, index) => {
-      const value = input.value;
-      updateSubgroup(index, value);
-    });
-  }
-  
-  function initializeYearHeaders() {
-    const initialYear = document.getElementById('year-0').value;
-    updateYearHeaders(initialYear);
-  }
-  
-  function updateSubgroup(row, value) {
-    document.getElementById(`successSubgroup-${row}`).value = value;
-    document.getElementById(`denominatorSubgroup-${row}`).value = value;
-    document.getElementById(`ppgSubgroup-${row}`).value = value;
-  }
-  
-  function updateYearHeaders(initialYear) {
-    const yearRegex = /^(\d{4})-(\d{2})$/;
-    const match = initialYear.match(yearRegex);
-  
-    if (match) {
-      const startYear = parseInt(match[1]);
-      let endYear = parseInt(match[2]);
-  
-      for (let i = 0; i < 4; i++) {
-        const yearHeader = `${startYear + i}-${(endYear + i) % 100}`;
-        document.getElementById(`year-${i}`).value = yearHeader;
-        document.getElementById(`success-year-${i}`).value = yearHeader;
-        document.getElementById(`denominator-year-${i}`).value = yearHeader;
-        document.getElementById(`ppg-year-${i}`).value = yearHeader;
-      }
-    }
-  }
-  
+
+  // Call calculate on page load
+  calculate();
+});
+
 function calculate() {
   const numeratorInputs = document.querySelectorAll('.inputNumerator');
   const denominatorInputs = document.querySelectorAll('.inputDenominator');
-  const messageDiv = document.getElementById('message');
 
-  // Step 1: Count valid subgroups (those with at least one numerator and denominator filled in)
-  let validSubgroups = 0;
-  for (let row = 0; row < 9; row++) {
-    let hasValidEntry = false;
-    for (let col = 0; col < 4; col++) {
-      const numerator = parseFloat(numeratorInputs[row * 4 + col].value);
-      const denominator = parseFloat(denominatorInputs[row * 4 + col].value);
-
-      if (!isNaN(numerator) && numerator > 0 && !isNaN(denominator) && denominator > 0) {
-        hasValidEntry = true;
-        break;  // As soon as we find one valid entry in any year for this subgroup, we can count it as valid.
-      }
-    }
-    if (hasValidEntry) {
-      validSubgroups += 1;
-    }
-  }
-
-  // Step 2: Show warning if fewer than two subgroups have been filled
-  if (validSubgroups < 2) {
-    messageDiv.innerText = "At least two subgroups must be filled in to calculate results.";
-    clearCalculations();  // Clear the table if not enough data is provided
-    return;
-  } else {
-    messageDiv.innerText = ""; // Clear message when valid
-  }
-
-  // Step 3: Perform the calculation if there are two or more valid subgroups
+  // Calculate total numerator and denominator
   const totalNumerator = Array.from(numeratorInputs).reduce((sum, input) => sum + (parseFloat(input.value) || 0), 0);
   const totalDenominator = Array.from(denominatorInputs).reduce((sum, input) => sum + (parseFloat(input.value) || 0), 0);
+
+  // Debugging: Log total numerator and denominator
+  console.log(`Total Numerator: ${totalNumerator}, Total Denominator: ${totalDenominator}`);
 
   for (let row = 0; row < 9; row++) {
     for (let col = 0; col < 4; col++) {
       const numerator = parseFloat(numeratorInputs[row * 4 + col].value) || 0;
       const denominator = parseFloat(denominatorInputs[row * 4 + col].value) || 0;
 
+      // Ensure denominator is non-zero
       if (denominator > 0) {
-        // Step 4: Calculate success rate for the ethnicity
-        const successRate = numerator / denominator;
+        // Calculate the success rate for the current row and column
+        const successRate = (numerator / denominator).toFixed(4);
 
-        // Step 5: Calculate success rate for all other ethnicities (excluding this one)
+        // Calculate adjusted numerator and denominator by removing the current group from the totals
         const adjustedNumerator = totalNumerator - numerator;
         const adjustedDenominator = totalDenominator - denominator;
-        const adjustedSuccessRate = adjustedDenominator > 0 ? adjustedNumerator / adjustedDenominator : 0;
 
-        // Step 6: Calculate PPG-1 value
-        const ppg1Value = (successRate - adjustedSuccessRate) * 100;  // Convert to percentage
+        // Ensure adjusted denominator is non-zero to avoid division by zero
+        const adjustedSuccessRate = adjustedDenominator > 0 ? (adjustedNumerator / adjustedDenominator).toFixed(4) : 0;
 
-        // Update the table with the calculated values
+        // Calculate PPG-1
+        const ppg1Value = (successRate - adjustedSuccessRate).toFixed(4);
+
+        // Debugging: Log individual cell values
+        console.log(`Row: ${row}, Col: ${col}, Numerator: ${numerator}, Denominator: ${denominator}`);
+        console.log(`Success Rate: ${successRate}, Adjusted Success Rate: ${adjustedSuccessRate}, PPG-1: ${ppg1Value}`);
+
+        // Update the success rate and PPG-1 in the table
         document.getElementById(`successRate-${row}-${col}`).innerText = (successRate * 100).toFixed(1) + '%';
         const ppg1Cell = document.getElementById(`ppg1Value-${row}-${col}`);
-        ppg1Cell.innerText = ppg1Value.toFixed(1) + '%';
+        ppg1Cell.innerText = (ppg1Value * 100).toFixed(1) + '%';
 
-        // Update heatmap colors based on PPG-1 value
+        // Apply background color based on value
         const bgColor = getHeatmapColor(ppg1Value);
         ppg1Cell.style.backgroundColor = bgColor;
-        ppg1Cell.style.color = bgColor === '#ff0000' ? '#ffffff' : '#000000'; // Adjust text color for readability
+        ppg1Cell.style.color = bgColor === '#ff0000' ? '#ffffff' : '#000000'; // White text on red background, black otherwise
       } else {
-        // Clear the fields if denominator is 0
+        // Clear the success rate and PPG-1 if denominator is 0
         document.getElementById(`successRate-${row}-${col}`).innerText = '';
         const ppg1Cell = document.getElementById(`ppg1Value-${row}-${col}`);
         ppg1Cell.innerText = '';
         ppg1Cell.style.backgroundColor = '';
-        ppg1Cell.style.color = '';
+        ppg1Cell.style.color = ''; // Reset text color
       }
     }
   }
 }
 
+function getHeatmapColor(value) {
+  const numValue = parseFloat(value);
+  if (numValue > 0) {
+    return '#FEEDDE'; // Neutral
+  } else if (numValue >= -10) {
+    return '#ffc7ce'; // Pink
+  } else {
+    return '#ff0000'; // Red
+  }
+}
