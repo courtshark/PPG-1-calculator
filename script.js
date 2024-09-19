@@ -88,23 +88,20 @@ function calculate() {
   const denominatorInputs = document.querySelectorAll('.inputDenominator');
   const messageDiv = document.getElementById('message');
 
-  // Step 1: Count valid subgroups (those with both numerator and denominator filled in)
+  // Step 1: Count valid subgroups (those with at least one numerator and denominator filled in)
   let validSubgroups = 0;
   for (let row = 0; row < 9; row++) {
-    let hasNumerator = false;
-    let hasDenominator = false;
+    let hasValidEntry = false;
     for (let col = 0; col < 4; col++) {
       const numerator = parseFloat(numeratorInputs[row * 4 + col].value);
       const denominator = parseFloat(denominatorInputs[row * 4 + col].value);
 
-      if (!isNaN(numerator) && numerator > 0) {
-        hasNumerator = true;
-      }
-      if (!isNaN(denominator) && denominator > 0) {
-        hasDenominator = true;
+      if (!isNaN(numerator) && numerator > 0 && !isNaN(denominator) && denominator > 0) {
+        hasValidEntry = true;
+        break;  // As soon as we find one valid entry in any year for this subgroup, we can count it as valid.
       }
     }
-    if (hasNumerator && hasDenominator) {
+    if (hasValidEntry) {
       validSubgroups += 1;
     }
   }
@@ -172,6 +169,7 @@ function clearCalculations() {
     }
   }
 }
+
   
   function getHeatmapColor(value) {
     const numValue = parseFloat(value);
