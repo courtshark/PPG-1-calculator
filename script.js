@@ -89,7 +89,7 @@ function calculate() {
   const numeratorInputs = document.querySelectorAll('.inputNumerator');
   const denominatorInputs = document.querySelectorAll('.inputDenominator');
 
-  // Calculate total numerator and denominator
+  // Calculate total numerator and denominator for all ethnicities
   const totalNumerator = Array.from(numeratorInputs).reduce((sum, input) => sum + (parseFloat(input.value) || 0), 0);
   const totalDenominator = Array.from(denominatorInputs).reduce((sum, input) => sum + (parseFloat(input.value) || 0), 0);
 
@@ -101,19 +101,18 @@ function calculate() {
       const numerator = parseFloat(numeratorInputs[row * 4 + col].value) || 0;
       const denominator = parseFloat(denominatorInputs[row * 4 + col].value) || 0;
 
-      // Ensure denominator is non-zero
       if (denominator > 0) {
-        // Calculate the success rate for the current row and column
+        // 1. Success rate for the ethnicity
         const successRate = (numerator / denominator).toFixed(4);
 
-        // Calculate adjusted numerator and denominator by removing the current group from the totals
+        // 2. Adjusted numerator and denominator (excluding current ethnicity)
         const adjustedNumerator = totalNumerator - numerator;
         const adjustedDenominator = totalDenominator - denominator;
 
         // Ensure adjusted denominator is non-zero to avoid division by zero
         const adjustedSuccessRate = adjustedDenominator > 0 ? (adjustedNumerator / adjustedDenominator).toFixed(4) : 0;
 
-        // Calculate PPG-1
+        // 3. Calculate PPG-1
         const ppg1Value = (successRate - adjustedSuccessRate).toFixed(4);
 
         // Debugging: Log individual cell values
