@@ -1,92 +1,37 @@
-document.addEventListener('DOMContentLoaded', (event) => {
-  const numeratorInputs = document.querySelectorAll('.inputNumerator');
-  const denominatorInputs = document.querySelectorAll('.inputDenominator');
-  const subgroupInputs = document.querySelectorAll('.inputSubgroup');
-  const yearHeaderInputs = document.querySelectorAll('.yearHeader');
-
-  // Initialize subgroup names and year headers across all tables
-  initializeSubgroups();
-  initializeYearHeaders();
-
-  // Add event listeners for each input field to recalculate when the values change
-  numeratorInputs.forEach(input => input.addEventListener('input', calculatePPG1));
-  denominatorInputs.forEach(input => input.addEventListener('input', calculatePPG1));
-  subgroupInputs.forEach((input, index) => {
-    input.addEventListener('input', () => updateSubgroup(index, input.value));
-  });
-
-  yearHeaderInputs.forEach((input, index) => {
-    if (index % 4 === 0) {  // Only the first year is editable
-      input.addEventListener('input', () => updateYearHeaders(input.value));
-    }
-  });
-
-  // Call calculate on page load to handle preset values
-  calculatePPG1();
-});
-
-// Function to autofill subgroup names across tables
-function initializeSubgroups() {
-  const subgroups = document.querySelectorAll('#numeratorTable .inputSubgroup');
-  subgroups.forEach((input, index) => {
-    const value = input.value;
-    updateSubgroup(index, value);
-  });
-}
-
-// Function to autofill year headers across tables
-function initializeYearHeaders() {
-  const initialYear = document.getElementById('year-0').value;
-  updateYearHeaders(initialYear);
-}
-
-// Update subgroup names across all tables
-function updateSubgroup(row, value) {
-  document.getElementById(`successSubgroup-${row}`).value = value;
-  document.getElementById(`denominatorSubgroup-${row}`).value = value;
-  document.getElementById(`ppgSubgroup-${row}`).value = value;
-}
-
-// Update year headers across all tables based on the first input
-function updateYearHeaders(initialYear) {
-  const yearRegex = /^(\d{4})-(\d{2})$/;
-  const match = initialYear.match(yearRegex);
-
-  if (match) {
-    const startYear = parseInt(match[1]);
-    let endYear = parseInt(match[2]);
-
-    for (let i = 0; i < 4; i++) {
-      const yearHeader = `${startYear + i}-${(endYear + i) % 100}`;
-      document.getElementById(`year-${i}`).value = yearHeader;
-      document.getElementById(`success-year-${i}`).value = yearHeader;
-      document.getElementById(`denominator-year-${i}`).value = yearHeader;
-      document.getElementById(`ppg-year-${i}`).value = yearHeader;
-    }
-  }
-}
-
-// Main function to calculate PPG-1 and update the table
 function calculatePPG1() {
   const numeratorInputs = document.querySelectorAll('.inputNumerator');
   const denominatorInputs = document.querySelectorAll('.inputDenominator');
 
-  // Calculate total numerator and denominator across all groups
-  const totalNumerator = Array.from(numeratorInputs).reduce((sum, input) => sum + (parseFloat(input.value) || 0), 0);
-  const totalDenominator = Array.from(denominatorInputs).reduce((sum, input) => sum + (parseFloat(input.value) || 0), 0);
+  // Calculate totals for each column (for each year)
+  const columnTotals = {
+    totalNumerator: [0, 0, 0, 0],
+    totalDenominator: [0, 0, 0, 0]
+  };
 
-  for (let row = 0; row < 9; row++) {  // Loop through rows (ethnicities)
+  // Sum up the numerators and denominators for each year (column)
+  for (let col = 0; col < 4; col++) {
+    for (let row = 0; row < 9; row++) {  // Assuming 9 subgroups (you can adjust this)
+      const numerator = parseFloat(numeratorInputs[row * 4 + col].value) || 0;
+      const denominator = parseFloat(denominatorInputs[row * 4 + col].value) || 0;
+
+      columnTotals.totalNumerator[col] += numerator;
+      columnTotals.totalDenominator[col] += denominator;
+    }
+  }
+
+  // Now calculate PPG-1 for each subgroup and year
+  for (let row = 0; row < 9; row++) {  // Loop through rows (subgroups)
     for (let col = 0; col < 4; col++) {  // Loop through columns (years)
       const numerator = parseFloat(numeratorInputs[row * 4 + col].value) || 0;
       const denominator = parseFloat(denominatorInputs[row * 4 + col].value) || 0;
 
-      if (denominator > 0 && totalDenominator > 0) {
+      if (denominator > 0 && columnTotals.totalDenominator[col] > 0) {
         // Calculate group success rate
         const groupSuccessRate = numerator / denominator;
 
         // Adjust totals by subtracting the current group's values
-        const adjustedNumerator = totalNumerator - numerator;
-        const adjustedDenominator = totalDenominator - denominator;
+        const adjustedNumerator = columnTotals.totalNumerator[col] - numerator;
+        const adjustedDenominator = columnTotals.totalDenominator[col] - denominator;
 
         // Ensure adjusted denominator is greater than zero to avoid division by zero
         const adjustedSuccessRate = adjustedDenominator > 0 ? adjustedNumerator / adjustedDenominator : 0;
