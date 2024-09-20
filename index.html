@@ -1,126 +1,169 @@
-document.addEventListener('DOMContentLoaded', (event) => {
-  const numeratorInputs = document.querySelectorAll('.inputNumerator');
-  const denominatorInputs = document.querySelectorAll('.inputDenominator');
-  const subgroupInputs = document.querySelectorAll('.inputSubgroup');
-  const yearHeaderInputs = document.querySelectorAll('.yearHeader');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Success Rates and PPG-1 Values</title>
+  <link rel="stylesheet" href="style.css">
+</head>
 
-  // Initialize subgroup names and year headers across all tables
-  initializeSubgroups();
-  initializeYearHeaders();
+<body>
 
-  // Add event listeners for each input field to recalculate when the values change
-  numeratorInputs.forEach(input => input.addEventListener('input', calculatePPG1));
-  denominatorInputs.forEach(input => input.addEventListener('input', calculatePPG1));
-  subgroupInputs.forEach((input, index) => {
-    input.addEventListener('input', () => updateSubgroup(index, input.value));
-  });
+  <div class="top-right-image">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Orange_Coast_College_logo.svg" alt="Top Right Image">
+  </div>
 
-  yearHeaderInputs.forEach((input, index) => {
-    if (index % 4 === 0) {  // Only the first year is editable
-      input.addEventListener('input', () => updateYearHeaders(input.value));
-    }
-  });
+  <h1>Equity Gap (Percentage Point Gap - 1) Calculator</h1>
+  
+  <h3>Links to find data:</h3>
+  <div class="top-right-links">
+    <a href="https://app.powerbi.com/view?r=eyJrIjoiZGVlMTYwNjAtYjg0MS00ZGJhLTkyNjMtZjk5ZDIzMGMwZjYzIiwidCI6ImVlNTdmNTU1LTFkNzAtNGE4Yi04ZWRhLWMwZjQwNzFhNDQ1OCIsImMiOjZ9" target=" _blank">Course Success & Retention Rate</a>
+    <a href="https://app.powerbi.com/view?r=eyJrIjoiNDZkNWY5MzgtMjc3NC00YWVkLWEyMjUtODFmMzc3Mzg5NDkyIiwidCI6ImVlNTdmNTU1LTFkNzAtNGE4Yi04ZWRhLWMwZjQwNzFhNDQ1OCIsImMiOjZ9" target=" _blank">Student Persistence</a>
+    <a href="https://app.powerbi.com/view?r=eyJrIjoiMDU3YjYwYTItZDA4Mi00ZDJmLTgyMTgtYzk2NzNhYzA1YjczIiwidCI6ImVlNTdmNTU1LTFkNzAtNGE4Yi04ZWRhLWMwZjQwNzFhNDQ1OCIsImMiOjZ9" target=" _blank">Enrollments</a>
+  </div>
 
-  // Call calculate on page load to handle preset values
-  calculatePPG1();
-});
+  <div class="table-container">
+    <!-- Numerator Table: Equity Metric -->
+    <div class="table-wrapper">
+      <h2>Equity Metric</h2>
+      <h4>Enter the subgroup count for the goal metric (Success, Retention, Enrollments, etc.)</h4>
+      <table id="numeratorTable">
+        <tr>
+          <th>Race/Ethnicity</th>
+          <th><input type="text" class="yearHeader" id="year-0" value="2020-21"></th>
+          <th><input type="text" class="yearHeader" id="year-1" value="2021-22" readonly></th>
+          <th><input type="text" class="yearHeader" id="year-2" value="2022-23" readonly></th>
+          <th><input type="text" class="yearHeader" id="year-3" value="2023-24" readonly></th>
+        </tr>
+        <!-- Repeat rows for different ethnic groups -->
+        <tr>
+          <td><input type="text" class="inputSubgroup" id="inputSubgroup-0" value="Am Ind/Ntv Alsk"></td>
+          <td><input type="number" class="inputNumerator" id="inputNumerator-0-0"></td>
+          <td><input type="number" class="inputNumerator" id="inputNumerator-0-1"></td>
+          <td><input type="number" class="inputNumerator" id="inputNumerator-0-2"></td>
+          <td><input type="number" class="inputNumerator" id="inputNumerator-0-3"></td>
+        </tr>
+        <tr>
+          <td><input type="text" class="inputSubgroup" id="inputSubgroup-1" value="Asian"></td>
+          <td><input type="number" class="inputNumerator" id="inputNumerator-1-0"></td>
+          <td><input type="number" class="inputNumerator" id="inputNumerator-1-1"></td>
+          <td><input type="number" class="inputNumerator" id="inputNumerator-1-2"></td>
+          <td><input type="number" class="inputNumerator" id="inputNumerator-1-3"></td>
+        </tr>
+        <tr>
+          <td><input type="text" class="inputSubgroup" id="inputSubgroup-2" value="Black"></td>
+          <td><input type="number" class="inputNumerator" id="inputNumerator-2-0"></td>
+          <td><input type="number" class="inputNumerator" id="inputNumerator-2-1"></td>
+          <td><input type="number" class="inputNumerator" id="inputNumerator-2-2"></td>
+          <td><input type="number" class="inputNumerator" id="inputNumerator-2-3"></td>
+        </tr>
+        <tr>
+          <td><input type="text" class="inputSubgroup" id="inputSubgroup-3" value="Hispanic/Latinx"></td>
+          <td><input type="number" class="inputNumerator" id="inputNumerator-3-0"></td>
+          <td><input type="number" class="inputNumerator" id="inputNumerator-3-1"></td>
+          <td><input type="number" class="inputNumerator" id="inputNumerator-3-2"></td>
+          <td><input type="number" class="inputNumerator" id="inputNumerator-3-3"></td>
+        </tr>
+        <!-- Add more rows for other groups as needed -->
+      </table>
+    </div>
 
-// Function to autofill subgroup names across tables
-function initializeSubgroups() {
-  const subgroups = document.querySelectorAll('#numeratorTable .inputSubgroup');
-  subgroups.forEach((input, index) => {
-    const value = input.value;
-    updateSubgroup(index, value);
-  });
-}
+    <!-- Success Rates Table -->
+    <div class="table-wrapper">
+      <h2>Disaggregated Success Rates</h2>
+      <h4>This table shows the rates for each equity metric and the total population per ethnicity.</h4>
+      <table id="successRatesTable">
+        <tr>
+          <th>Race/Ethnicity</th>
+          <th><input type="text" class="yearHeader" id="success-year-0" readonly></th>
+          <th><input type="text" class="yearHeader" id="success-year-1" readonly></th>
+          <th><input type="text" class="yearHeader" id="success-year-2" readonly></th>
+          <th><input type="text" class="yearHeader" id="success-year-3" readonly></th>
+        </tr>
+        <!-- Example success rates for each subgroup (output cells will be calculated via JavaScript) -->
+        <tr>
+          <td><input type="text" class="inputSubgroup" id="successSubgroup-0" readonly></td>
+          <td id="successRate-0-0"></td>
+          <td id="successRate-0-1"></td>
+          <td id="successRate-0-2"></td>
+          <td id="successRate-0-3"></td>
+        </tr>
+        <tr>
+          <td><input type="text" class="inputSubgroup" id="successSubgroup-1" readonly></td>
+          <td id="successRate-1-0"></td>
+          <td id="successRate-1-1"></td>
+          <td id="successRate-1-2"></td>
+          <td id="successRate-1-3"></td>
+        </tr>
+        <!-- Add more rows for other groups as needed -->
+      </table>
+    </div>
+  </div>
 
-// Function to autofill year headers across tables
-function initializeYearHeaders() {
-  const initialYear = document.getElementById('year-0').value;
-  updateYearHeaders(initialYear);
-}
+  <div class="table-container">
+    <!-- Denominator Table: Total Count -->
+    <div class="table-wrapper">
+      <h2>Total Count</h2>
+      <h4>Enter the total counts for each race/ethnicity to represent the overall population.</h4>
+      <table id="denominatorTable">
+        <tr>
+          <th>Race/Ethnicity</th>
+          <th><input type="text" class="yearHeader" id="denominator-year-0" readonly></th>
+          <th><input type="text" class="yearHeader" id="denominator-year-1" readonly></th>
+          <th><input type="text" class="yearHeader" id="denominator-year-2" readonly></th>
+          <th><input type="text" class="yearHeader" id="denominator-year-3" readonly></th>
+        </tr>
+        <!-- Example rows for total count inputs -->
+        <tr>
+          <td><input type="text" class="inputSubgroup" id="denominatorSubgroup-0"></td>
+          <td><input type="number" class="inputDenominator" id="inputDenominator-0-0"></td>
+          <td><input type="number" class="inputDenominator" id="inputDenominator-0-1"></td>
+          <td><input type="number" class="inputDenominator" id="inputDenominator-0-2"></td>
+          <td><input type="number" class="inputDenominator" id="inputDenominator-0-3"></td>
+        </tr>
+        <tr>
+          <td><input type="text" class="inputSubgroup" id="denominatorSubgroup-1"></td>
+          <td><input type="number" class="inputDenominator" id="inputDenominator-1-0"></td>
+          <td><input type="number" class="inputDenominator" id="inputDenominator-1-1"></td>
+          <td><input type="number" class="inputDenominator" id="inputDenominator-1-2"></td>
+          <td><input type="number" class="inputDenominator" id="inputDenominator-1-3"></td>
+        </tr>
+        <!-- Add more rows for other groups as needed -->
+      </table>
+    </div>
 
-// Update subgroup names across all tables
-function updateSubgroup(row, value) {
-  document.getElementById(`successSubgroup-${row}`).value = value;
-  document.getElementById(`denominatorSubgroup-${row}`).value = value;
-  document.getElementById(`ppgSubgroup-${row}`).value = value;
-}
+    <!-- PPG-1 Table -->
+    <div class="table-wrapper">
+      <h2>Percentage Point Gap Minus One (PPG-1)</h2>
+      <h4>The PPG-1 table measures disparities in educational outcomes between student subgroups and the rest of the student body.</h4>
+      <table id="ppg1ValuesTable">
+        <tr>
+          <th>Race/Ethnicity</th>
+          <th><input type="text" class="yearHeader" id="ppg-year-0" readonly></th>
+          <th><input type="text" class="yearHeader" id="ppg-year-1" readonly></th>
+          <th><input type="text" class="yearHeader" id="ppg-year-2" readonly></th>
+          <th><input type="text" class="yearHeader" id="ppg-year-3" readonly></th>
+        </tr>
+        <!-- Example rows for PPG-1 values, which will be calculated via JavaScript -->
+        <tr>
+          <td><input type="text" class="inputSubgroup" id="ppgSubgroup-0" readonly></td>
+          <td id="ppg1Value-0-0"></td>
+          <td id="ppg1Value-0-1"></td>
+          <td id="ppg1Value-0-2"></td>
+          <td id="ppg1Value-0-3"></td>
+        </tr>
+        <tr>
+          <td><input type="text" class="inputSubgroup" id="ppgSubgroup-1" readonly></td>
+          <td id="ppg1Value-1-0"></td>
+          <td id="ppg1Value-1-1"></td>
+          <td id="ppg1Value-1-2"></td>
+          <td id="ppg1Value-1-3"></td>
+        </tr>
+        <!-- Add more rows for other groups as needed -->
+      </table>
+    </div>
+  </div>
 
-// Update year headers across all tables based on the first input
-function updateYearHeaders(initialYear) {
-  const yearRegex = /^(\d{4})-(\d{2})$/;
-  const match = initialYear.match(yearRegex);
-
-  if (match) {
-    const startYear = parseInt(match[1]);
-    let endYear = parseInt(match[2]);
-
-    for (let i = 0; i < 4; i++) {
-      const yearHeader = `${startYear + i}-${(endYear + i) % 100}`;
-      document.getElementById(`year-${i}`).value = yearHeader;
-      document.getElementById(`success-year-${i}`).value = yearHeader;
-      document.getElementById(`denominator-year-${i}`).value = yearHeader;
-      document.getElementById(`ppg-year-${i}`).value = yearHeader;
-    }
-  }
-}
-
-// Main function to calculate PPG-1 and update the table
-function calculatePPG1() {
-  const numeratorInputs = document.querySelectorAll('.inputNumerator');
-  const denominatorInputs = document.querySelectorAll('.inputDenominator');
-
-  // Calculate total numerator and denominator across all groups
-  const totalNumerator = Array.from(numeratorInputs).reduce((sum, input) => sum + (parseFloat(input.value) || 0), 0);
-  const totalDenominator = Array.from(denominatorInputs).reduce((sum, input) => sum + (parseFloat(input.value) || 0), 0);
-
-  for (let row = 0; row < 9; row++) {  // Loop through rows (ethnicities)
-    for (let col = 0; col < 4; col++) {  // Loop through columns (years)
-      const numerator = parseFloat(numeratorInputs[row * 4 + col].value) || 0;
-      const denominator = parseFloat(denominatorInputs[row * 4 + col].value) || 0;
-
-      if (denominator > 0 && totalDenominator > 0) {
-        // Calculate group success rate
-        const groupSuccessRate = numerator / denominator;
-
-        // Adjust totals by subtracting the current group's values
-        const adjustedNumerator = totalNumerator - numerator;
-        const adjustedDenominator = totalDenominator - denominator;
-
-        // Ensure adjusted denominator is greater than zero to avoid division by zero
-        const adjustedSuccessRate = adjustedDenominator > 0 ? adjustedNumerator / adjustedDenominator : 0;
-
-        // Calculate PPG-1
-        const ppg1Value = ((groupSuccessRate - adjustedSuccessRate) * 100).toFixed(1);
-
-        // Update the PPG-1 value in the table
-        const ppg1Cell = document.getElementById(`ppg1Value-${row}-${col}`);
-        ppg1Cell.innerText = `${ppg1Value}%`;
-
-        // Apply background color based on PPG-1 value
-        const bgColor = getHeatmapColor(ppg1Value);
-        ppg1Cell.style.backgroundColor = bgColor;
-        ppg1Cell.style.color = bgColor === '#ff0000' ? '#ffffff' : '#000000';  // White text on red background, black otherwise
-      } else {
-        // Clear the PPG-1 cell if there's no denominator
-        const ppg1Cell = document.getElementById(`ppg1Value-${row}-${col}`);
-        ppg1Cell.innerText = '';
-        ppg1Cell.style.backgroundColor = '';
-        ppg1Cell.style.color = '';  // Reset text color
-      }
-    }
-  }
-}
-
-// Helper function to apply heatmap color based on PPG-1 value
-function getHeatmapColor(value) {
-  const numValue = parseFloat(value);
-  if (numValue > 0) {
-    return '#FEEDDE';  // Neutral for positive values
-  } else if (numValue >= -10) {
-    return '#ffc7ce';  // Pink for small negative values
-  } else {
-    return '#ff0000';  // Red for larger negative values
-  }
-}
+  <script src="script.js"></script>
+</body>
+</html>
