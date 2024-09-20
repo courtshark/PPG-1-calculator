@@ -80,7 +80,7 @@ function calculatePPG1() {
       const numerator = parseFloat(numeratorInputs[row * 4 + col].value) || 0;
       const denominator = parseFloat(denominatorInputs[row * 4 + col].value) || 0;
 
-      if (denominator > 0) {
+      if (denominator > 0 && totalDenominator > 0) {
         // Calculate group success rate
         const groupSuccessRate = numerator / denominator;
 
@@ -88,7 +88,7 @@ function calculatePPG1() {
         const adjustedNumerator = totalNumerator - numerator;
         const adjustedDenominator = totalDenominator - denominator;
 
-        // Calculate adjusted success rate
+        // Ensure adjusted denominator is greater than zero to avoid division by zero
         const adjustedSuccessRate = adjustedDenominator > 0 ? adjustedNumerator / adjustedDenominator : 0;
 
         // Calculate PPG-1
