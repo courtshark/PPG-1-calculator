@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
   initializeSubgroups();
   initializeYearHeaders();
 
-  // Add event listeners for each input field
+  // Add event listeners for each input field to recalculate when the values change
   numeratorInputs.forEach(input => input.addEventListener('input', calculatePPG1));
   denominatorInputs.forEach(input => input.addEventListener('input', calculatePPG1));
   subgroupInputs.forEach((input, index) => {
@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     }
   });
 
-  // Call calculate on page load to ensure any preset values are handled
+  // Call calculate on page load to handle preset values
   calculatePPG1();
 });
 
@@ -66,7 +66,7 @@ function updateYearHeaders(initialYear) {
   }
 }
 
-// Main function to calculate PPG-1 and update table
+// Main function to calculate PPG-1 and update the table
 function calculatePPG1() {
   const numeratorInputs = document.querySelectorAll('.inputNumerator');
   const denominatorInputs = document.querySelectorAll('.inputDenominator');
