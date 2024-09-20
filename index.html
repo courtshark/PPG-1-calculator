@@ -9,11 +9,12 @@
 
 <body>
 
-    <div class="top-right-image">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Orange_Coast_College_logo.svg" alt="Top Right Image">
-      </div>
+  <div class="top-right-image">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Orange_Coast_College_logo.svg" alt="Top Right Image">
+  </div>
 
   <h1>Equity Gap (Percentage Point Gap - 1) Calculator</h1>
+  
   <h3>Links to find data:</h3>
   <div class="top-right-links">
     <a href="https://app.powerbi.com/view?r=eyJrIjoiZGVlMTYwNjAtYjg0MS00ZGJhLTkyNjMtZjk5ZDIzMGMwZjYzIiwidCI6ImVlNTdmNTU1LTFkNzAtNGE4Yi04ZWRhLWMwZjQwNzFhNDQ1OCIsImMiOjZ9" target=" _blank">Course Success & Retention Rate</a>
@@ -22,6 +23,7 @@
   </div>
 
   <div class="table-container">
+    <!-- Numerator Table: Equity Metric -->
     <div class="table-wrapper">
       <h2>Equity Metric</h2>
       <h4>Enter the subgroup count for the goal metric (Success, Retention, Enrollments, etc.)</h4>
@@ -33,6 +35,7 @@
           <th><input type="text" class="yearHeader" id="year-2" value="2022-23" readonly></th>
           <th><input type="text" class="yearHeader" id="year-3" value="2023-24" readonly></th>
         </tr>
+        <!-- Repeat rows for different ethnic groups -->
         <tr>
           <td><input type="text" class="inputSubgroup" id="inputSubgroup-0" value="Am Ind/Ntv Alsk"></td>
           <td><input type="number" class="inputNumerator" id="inputNumerator-0-0"></td>
@@ -41,67 +44,34 @@
           <td><input type="number" class="inputNumerator" id="inputNumerator-0-3"></td>
         </tr>
         <tr>
-            <td><input type="text" class="inputSubgroup" id="inputSubgroup-1" value="Asian"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-1-0"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-1-1"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-1-2"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-1-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="inputSubgroup-2" value="Black"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-2-0"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-2-1"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-2-2"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-2-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="inputSubgroup-3" value="Hispanic/Latinx"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-3-0"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-3-1"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-3-2"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-3-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="inputSubgroup-4" value="More than one"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-4-0"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-4-1"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-4-2"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-4-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="inputSubgroup-5" value="Unknown"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-5-0"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-5-1"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-5-2"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-5-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="inputSubgroup-6" value="White"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-6-0"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-6-1"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-6-2"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-6-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="inputSubgroup-7" value=""></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-7-0"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-7-1"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-7-2"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-7-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="inputSubgroup-8" value=""></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-8-0"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-8-1"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-8-2"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-8-3"></td>
-          </tr>
-        <!-- Repeat for each row and column, ensuring unique IDs -->
+          <td><input type="text" class="inputSubgroup" id="inputSubgroup-1" value="Asian"></td>
+          <td><input type="number" class="inputNumerator" id="inputNumerator-1-0"></td>
+          <td><input type="number" class="inputNumerator" id="inputNumerator-1-1"></td>
+          <td><input type="number" class="inputNumerator" id="inputNumerator-1-2"></td>
+          <td><input type="number" class="inputNumerator" id="inputNumerator-1-3"></td>
+        </tr>
+        <tr>
+          <td><input type="text" class="inputSubgroup" id="inputSubgroup-2" value="Black"></td>
+          <td><input type="number" class="inputNumerator" id="inputNumerator-2-0"></td>
+          <td><input type="number" class="inputNumerator" id="inputNumerator-2-1"></td>
+          <td><input type="number" class="inputNumerator" id="inputNumerator-2-2"></td>
+          <td><input type="number" class="inputNumerator" id="inputNumerator-2-3"></td>
+        </tr>
+        <tr>
+          <td><input type="text" class="inputSubgroup" id="inputSubgroup-3" value="Hispanic/Latinx"></td>
+          <td><input type="number" class="inputNumerator" id="inputNumerator-3-0"></td>
+          <td><input type="number" class="inputNumerator" id="inputNumerator-3-1"></td>
+          <td><input type="number" class="inputNumerator" id="inputNumerator-3-2"></td>
+          <td><input type="number" class="inputNumerator" id="inputNumerator-3-3"></td>
+        </tr>
+        <!-- Add more rows for other groups as needed -->
       </table>
     </div>
+
+    <!-- Success Rates Table -->
     <div class="table-wrapper">
       <h2>Disaggregated Success Rates</h2>
-      <h4>This table shows the rates for each equity metric and the total population per ethnicity </h4>
+      <h4>This table shows the rates for each equity metric and the total population per ethnicity.</h4>
       <table id="successRatesTable">
         <tr>
           <th>Race/Ethnicity</th>
@@ -110,6 +80,7 @@
           <th><input type="text" class="yearHeader" id="success-year-2" readonly></th>
           <th><input type="text" class="yearHeader" id="success-year-3" readonly></th>
         </tr>
+        <!-- Example success rates for each subgroup (output cells will be calculated via JavaScript) -->
         <tr>
           <td><input type="text" class="inputSubgroup" id="successSubgroup-0" readonly></td>
           <td id="successRate-0-0"></td>
@@ -118,70 +89,22 @@
           <td id="successRate-0-3"></td>
         </tr>
         <tr>
-            <td><input type="text" class="inputSubgroup" id="successSubgroup-1" readonly></td>
-            <td id="successRate-1-0"></td>
-            <td id="successRate-1-1"></td>
-            <td id="successRate-1-2"></td>
-            <td id="successRate-1-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="successSubgroup-2" readonly></td>
-            <td id="successRate-2-0"></td>
-            <td id="successRate-2-1"></td>
-            <td id="successRate-2-2"></td>
-            <td id="successRate-2-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="successSubgroup-3" readonly></td>
-            <td id="successRate-3-0"></td>
-            <td id="successRate-3-1"></td>
-            <td id="successRate-3-2"></td>
-            <td id="successRate-3-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="successSubgroup-4" readonly></td>
-            <td id="successRate-4-0"></td>
-            <td id="successRate-4-1"></td>
-            <td id="successRate-4-2"></td>
-            <td id="successRate-4-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="successSubgroup-5" readonly></td>
-            <td id="successRate-5-0"></td>
-            <td id="successRate-5-1"></td>
-            <td id="successRate-5-2"></td>
-            <td id="successRate-5-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="successSubgroup-6" readonly></td>
-            <td id="successRate-6-0"></td>
-            <td id="successRate-6-1"></td>
-            <td id="successRate-6-2"></td>
-            <td id="successRate-6-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="successSubgroup-7" readonly></td>
-            <td id="successRate-7-0"></td>
-            <td id="successRate-7-1"></td>
-            <td id="successRate-7-2"></td>
-            <td id="successRate-7-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="successSubgroup-8" readonly></td>
-            <td id="successRate-8-0"></td>
-            <td id="successRate-8-1"></td>
-            <td id="successRate-8-2"></td>
-            <td id="successRate-8-3"></td>
-          </tr>
-        <!-- Repeat for each row and column, ensuring unique IDs -->
+          <td><input type="text" class="inputSubgroup" id="successSubgroup-1" readonly></td>
+          <td id="successRate-1-0"></td>
+          <td id="successRate-1-1"></td>
+          <td id="successRate-1-2"></td>
+          <td id="successRate-1-3"></td>
+        </tr>
+        <!-- Add more rows for other groups as needed -->
       </table>
     </div>
   </div>
 
   <div class="table-container">
+    <!-- Denominator Table: Total Count -->
     <div class="table-wrapper">
       <h2>Total Count</h2>
-      <h4>Enter the total counts for each race/ethnicity to represent the overall population </h4>
+      <h4>Enter the total counts for each race/ethnicity to represent the overall population.</h4>
       <table id="denominatorTable">
         <tr>
           <th>Race/Ethnicity</th>
@@ -190,6 +113,7 @@
           <th><input type="text" class="yearHeader" id="denominator-year-2" readonly></th>
           <th><input type="text" class="yearHeader" id="denominator-year-3" readonly></th>
         </tr>
+        <!-- Example rows for total count inputs -->
         <tr>
           <td><input type="text" class="inputSubgroup" id="denominatorSubgroup-0"></td>
           <td><input type="number" class="inputDenominator" id="inputDenominator-0-0"></td>
@@ -198,67 +122,20 @@
           <td><input type="number" class="inputDenominator" id="inputDenominator-0-3"></td>
         </tr>
         <tr>
-            <td><input type="text" class="inputSubgroup" id="denominatorSubgroup-1"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-1-0"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-1-1"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-1-2"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-1-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="denominatorSubgroup-2"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-2-0"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-2-1"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-2-2"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-2-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="denominatorSubgroup-3"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-3-0"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-3-1"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-3-2"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-3-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="denominatorSubgroup-4"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-4-0"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-4-1"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-4-2"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-4-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="denominatorSubgroup-5"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-5-0"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-5-1"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-5-2"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-5-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="denominatorSubgroup-6"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-6-0"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-6-1"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-6-2"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-6-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="denominatorSubgroup-7"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-7-0"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-7-1"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-7-2"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-7-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="denominatorSubgroup-8"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-8-0"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-8-1"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-8-2"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-8-3"></td>
-          </tr>
-        <!-- Repeat for each row and column, ensuring unique IDs -->
+          <td><input type="text" class="inputSubgroup" id="denominatorSubgroup-1"></td>
+          <td><input type="number" class="inputDenominator" id="inputDenominator-1-0"></td>
+          <td><input type="number" class="inputDenominator" id="inputDenominator-1-1"></td>
+          <td><input type="number" class="inputDenominator" id="inputDenominator-1-2"></td>
+          <td><input type="number" class="inputDenominator" id="inputDenominator-1-3"></td>
+        </tr>
+        <!-- Add more rows for other groups as needed -->
       </table>
     </div>
+
+    <!-- PPG-1 Table -->
     <div class="table-wrapper">
       <h2>Percentage Point Gap Minus One (PPG-1)</h2>
-      <h4>The PPG-1 table measures disparities in educational outcomes between student subgroups and the rest of the student body. </h4>
+      <h4>The PPG-1 table measures disparities in educational outcomes between student subgroups and the rest of the student body.</h4>
       <table id="ppg1ValuesTable">
         <tr>
           <th>Race/Ethnicity</th>
@@ -267,6 +144,7 @@
           <th><input type="text" class="yearHeader" id="ppg-year-2" readonly></th>
           <th><input type="text" class="yearHeader" id="ppg-year-3" readonly></th>
         </tr>
+        <!-- Example rows for PPG-1 values, which will be calculated via JavaScript -->
         <tr>
           <td><input type="text" class="inputSubgroup" id="ppgSubgroup-0" readonly></td>
           <td id="ppg1Value-0-0"></td>
@@ -275,63 +153,13 @@
           <td id="ppg1Value-0-3"></td>
         </tr>
         <tr>
-            <td><input type="text" class="inputSubgroup" id="ppgSubgroup-1" readonly></td>
-            <td id="ppg1Value-1-0"></td>
-            <td id="ppg1Value-1-1"></td>
-            <td id="ppg1Value-1-2"></td>
-            <td id="ppg1Value-1-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="ppgSubgroup-2" readonly></td>
-            <td id="ppg1Value-2-0"></td>
-            <td id="ppg1Value-2-1"></td>
-            <td id="ppg1Value-2-2"></td>
-            <td id="ppg1Value-2-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="ppgSubgroup-3" readonly></td>
-            <td id="ppg1Value-3-0"></td>
-            <td id="ppg1Value-3-1"></td>
-            <td id="ppg1Value-3-2"></td>
-            <td id="ppg1Value-3-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="ppgSubgroup-4" readonly></td>
-            <td id="ppg1Value-4-0"></td>
-            <td id="ppg1Value-4-1"></td>
-            <td id="ppg1Value-4-2"></td>
-            <td id="ppg1Value-4-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="ppgSubgroup-5" readonly></td>
-            <td id="ppg1Value-5-0"></td>
-            <td id="ppg1Value-5-1"></td>
-            <td id="ppg1Value-5-2"></td>
-            <td id="ppg1Value-5-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="ppgSubgroup-6" readonly></td>
-            <td id="ppg1Value-6-0"></td>
-            <td id="ppg1Value-6-1"></td>
-            <td id="ppg1Value-6-2"></td>
-            <td id="ppg1Value-6-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="ppgSubgroup-7" readonly></td>
-            <td id="ppg1Value-7-0"></td>
-            <td id="ppg1Value-7-1"></td>
-            <td id="ppg1Value-7-2"></td>
-            <td id="ppg1Value-7-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="ppgSubgroup-8" readonly></td>
-            <td id="ppg1Value-8-0"></td>
-            <td id="ppg1Value-8-1"></td>
-            <td id="ppg1Value-8-2"></td>
-            <td id="ppg1Value-8-3"></td>
-          </tr>
- 
-        <!-- Repeat for each row and column, ensuring unique IDs -->
+          <td><input type="text" class="inputSubgroup" id="ppgSubgroup-1" readonly></td>
+          <td id="ppg1Value-1-0"></td>
+          <td id="ppg1Value-1-1"></td>
+          <td id="ppg1Value-1-2"></td>
+          <td id="ppg1Value-1-3"></td>
+        </tr>
+        <!-- Add more rows for other groups as needed -->
       </table>
     </div>
   </div>
