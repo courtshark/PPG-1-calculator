@@ -85,69 +85,61 @@ function updateYearHeaders(initialYear) {
   }
 }
 
-function calculate() {
+function calculatePPG1() {
   const numeratorInputs = document.querySelectorAll('.inputNumerator');
   const denominatorInputs = document.querySelectorAll('.inputDenominator');
 
-  // Calculate total numerator and denominator
+  // Compute total numerator and denominator across all groups
   const totalNumerator = Array.from(numeratorInputs).reduce((sum, input) => sum + (parseFloat(input.value) || 0), 0);
   const totalDenominator = Array.from(denominatorInputs).reduce((sum, input) => sum + (parseFloat(input.value) || 0), 0);
 
-  // Debugging: Log total numerator and denominator
-  console.log(`Total Numerator: ${totalNumerator}, Total Denominator: ${totalDenominator}`);
-
-  for (let row = 0; row < 9; row++) {
-    for (let col = 0; col < 4; col++) {
+  for (let row = 0; row < 9; row++) {  // Loop over rows (ethnicities)
+    for (let col = 0; col < 4; col++) {  // Loop over years
       const numerator = parseFloat(numeratorInputs[row * 4 + col].value) || 0;
       const denominator = parseFloat(denominatorInputs[row * 4 + col].value) || 0;
 
-      // Ensure denominator is non-zero
       if (denominator > 0) {
-        // Calculate the group success rate for the current row and column
-        const groupSuccessRate = (numerator / denominator).toFixed(4);
+        // Calculate group success rate
+        const groupSuccessRate = numerator / denominator;
 
-        // Calculate adjusted numerator and denominator by removing the current group from the totals
+        // Adjust total by subtracting the current group's numerator and denominator
         const adjustedNumerator = totalNumerator - numerator;
         const adjustedDenominator = totalDenominator - denominator;
 
-        // Ensure adjusted denominator is non-zero to avoid division by zero
-        const adjustedSuccessRate = adjustedDenominator > 0 ? (adjustedNumerator / adjustedDenominator).toFixed(4) : 0;
+        // Calculate adjusted success rate for the rest of the population
+        const adjustedSuccessRate = adjustedDenominator > 0 ? adjustedNumerator / adjustedDenominator : 0;
 
         // Calculate PPG-1: Group Success Rate - Adjusted Success Rate
         const ppg1Value = ((groupSuccessRate - adjustedSuccessRate) * 100).toFixed(1);
 
-        // Debugging: Log individual cell values
-        console.log(`Row: ${row}, Col: ${col}, Numerator: ${numerator}, Denominator: ${denominator}`);
-        console.log(`Group Success Rate: ${groupSuccessRate}, Adjusted Success Rate: ${adjustedSuccessRate}, PPG-1: ${ppg1Value}`);
-
-        // Update the success rate and PPG-1 in the table
-        document.getElementById(`successRate-${row}-${col}`).innerText = (groupSuccessRate * 100).toFixed(1) + '%';
+        // Update the PPG-1 value in the table
         const ppg1Cell = document.getElementById(`ppg1Value-${row}-${col}`);
         ppg1Cell.innerText = ppg1Value + '%';
 
-        // Apply background color based on value
+        // Apply background color to reflect the PPG-1 value
         const bgColor = getHeatmapColor(ppg1Value);
         ppg1Cell.style.backgroundColor = bgColor;
-        ppg1Cell.style.color = bgColor === '#ff0000' ? '#ffffff' : '#000000'; // White text on red background, black otherwise
+        ppg1Cell.style.color = bgColor === '#ff0000' ? '#ffffff' : '#000000';  // White text on red background, black otherwise
+
       } else {
-        // Clear the success rate and PPG-1 if denominator is 0
-        document.getElementById(`successRate-${row}-${col}`).innerText = '';
+        // Clear the cell if there's no denominator
         const ppg1Cell = document.getElementById(`ppg1Value-${row}-${col}`);
         ppg1Cell.innerText = '';
         ppg1Cell.style.backgroundColor = '';
-        ppg1Cell.style.color = ''; // Reset text color
+        ppg1Cell.style.color = '';  // Reset text color
       }
     }
   }
 }
 
+// Helper function to determine heatmap color based on PPG-1 value
 function getHeatmapColor(value) {
   const numValue = parseFloat(value);
   if (numValue > 0) {
-    return '#FEEDDE'; // Neutral
+    return '#FEEDDE';  // Neutral for positive values
   } else if (numValue >= -10) {
-    return '#ffc7ce'; // Pink
+    return '#ffc7ce';  // Pink for small negative values
   } else {
-    return '#ff0000'; // Red
+    return '#ff0000';  // Red for larger negative values
   }
 }
