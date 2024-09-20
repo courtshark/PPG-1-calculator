@@ -8,43 +8,24 @@ document.addEventListener('DOMContentLoaded', (event) => {
   initializeSubgroups();
   initializeYearHeaders();
 
-  // Add event listener for each input field
-  numeratorInputs.forEach(input => input.addEventListener('keydown', handleEnterPress));
-  denominatorInputs.forEach(input => input.addEventListener('keydown', handleEnterPress));
+  // Add event listeners for each input field
+  numeratorInputs.forEach(input => input.addEventListener('input', calculatePPG1));
+  denominatorInputs.forEach(input => input.addEventListener('input', calculatePPG1));
   subgroupInputs.forEach((input, index) => {
     input.addEventListener('input', () => updateSubgroup(index, input.value));
   });
 
   yearHeaderInputs.forEach((input, index) => {
-    if (index % 4 === 0) { // Only the first column header is editable
+    if (index % 4 === 0) {  // Only the first year is editable
       input.addEventListener('input', () => updateYearHeaders(input.value));
     }
   });
 
-  // Add event listener to recalculate when numerator or denominator changes
-  numeratorInputs.forEach(input => input.addEventListener('input', calculate));
-  denominatorInputs.forEach(input => input.addEventListener('input', calculate));
-
-  // Calculate on page load
-  calculate();
+  // Call calculate on page load to ensure any preset values are handled
+  calculatePPG1();
 });
 
-// Function to handle "Enter" key press to move to the next input
-function handleEnterPress(event) {
-  if (event.key === 'Enter') {
-    event.preventDefault(); // Prevent the default behavior of the Enter key
-    const currentId = event.target.id;
-    const [prefix, row, col] = currentId.split('-');
-    const nextRow = parseInt(row) + 1;
-    const nextId = `${prefix}-${nextRow}-${col}`;
-    const nextInput = document.getElementById(nextId);
-    if (nextInput) {
-      nextInput.focus();
-    }
-  }
-}
-
-// Initialize subgroup names across all tables
+// Function to autofill subgroup names across tables
 function initializeSubgroups() {
   const subgroups = document.querySelectorAll('#numeratorTable .inputSubgroup');
   subgroups.forEach((input, index) => {
@@ -53,20 +34,20 @@ function initializeSubgroups() {
   });
 }
 
-// Initialize year headers across all tables
+// Function to autofill year headers across tables
 function initializeYearHeaders() {
   const initialYear = document.getElementById('year-0').value;
   updateYearHeaders(initialYear);
 }
 
-// Update subgroup names across all relevant tables
+// Update subgroup names across all tables
 function updateSubgroup(row, value) {
   document.getElementById(`successSubgroup-${row}`).value = value;
   document.getElementById(`denominatorSubgroup-${row}`).value = value;
   document.getElementById(`ppgSubgroup-${row}`).value = value;
 }
 
-// Update year headers across all relevant tables
+// Update year headers across all tables based on the first input
 function updateYearHeaders(initialYear) {
   const yearRegex = /^(\d{4})-(\d{2})$/;
   const match = initialYear.match(yearRegex);
@@ -85,16 +66,17 @@ function updateYearHeaders(initialYear) {
   }
 }
 
+// Main function to calculate PPG-1 and update table
 function calculatePPG1() {
   const numeratorInputs = document.querySelectorAll('.inputNumerator');
   const denominatorInputs = document.querySelectorAll('.inputDenominator');
 
-  // Compute total numerator and denominator across all groups
+  // Calculate total numerator and denominator across all groups
   const totalNumerator = Array.from(numeratorInputs).reduce((sum, input) => sum + (parseFloat(input.value) || 0), 0);
   const totalDenominator = Array.from(denominatorInputs).reduce((sum, input) => sum + (parseFloat(input.value) || 0), 0);
 
-  for (let row = 0; row < 9; row++) {  // Loop over rows (ethnicities)
-    for (let col = 0; col < 4; col++) {  // Loop over years
+  for (let row = 0; row < 9; row++) {  // Loop through rows (ethnicities)
+    for (let col = 0; col < 4; col++) {  // Loop through columns (years)
       const numerator = parseFloat(numeratorInputs[row * 4 + col].value) || 0;
       const denominator = parseFloat(denominatorInputs[row * 4 + col].value) || 0;
 
@@ -102,27 +84,26 @@ function calculatePPG1() {
         // Calculate group success rate
         const groupSuccessRate = numerator / denominator;
 
-        // Adjust total by subtracting the current group's numerator and denominator
+        // Adjust totals by subtracting the current group's values
         const adjustedNumerator = totalNumerator - numerator;
         const adjustedDenominator = totalDenominator - denominator;
 
-        // Calculate adjusted success rate for the rest of the population
+        // Calculate adjusted success rate
         const adjustedSuccessRate = adjustedDenominator > 0 ? adjustedNumerator / adjustedDenominator : 0;
 
-        // Calculate PPG-1: Group Success Rate - Adjusted Success Rate
+        // Calculate PPG-1
         const ppg1Value = ((groupSuccessRate - adjustedSuccessRate) * 100).toFixed(1);
 
         // Update the PPG-1 value in the table
         const ppg1Cell = document.getElementById(`ppg1Value-${row}-${col}`);
-        ppg1Cell.innerText = ppg1Value + '%';
+        ppg1Cell.innerText = `${ppg1Value}%`;
 
-        // Apply background color to reflect the PPG-1 value
+        // Apply background color based on PPG-1 value
         const bgColor = getHeatmapColor(ppg1Value);
         ppg1Cell.style.backgroundColor = bgColor;
         ppg1Cell.style.color = bgColor === '#ff0000' ? '#ffffff' : '#000000';  // White text on red background, black otherwise
-
       } else {
-        // Clear the cell if there's no denominator
+        // Clear the PPG-1 cell if there's no denominator
         const ppg1Cell = document.getElementById(`ppg1Value-${row}-${col}`);
         ppg1Cell.innerText = '';
         ppg1Cell.style.backgroundColor = '';
@@ -132,7 +113,7 @@ function calculatePPG1() {
   }
 }
 
-// Helper function to determine heatmap color based on PPG-1 value
+// Helper function to apply heatmap color based on PPG-1 value
 function getHeatmapColor(value) {
   const numValue = parseFloat(value);
   if (numValue > 0) {
