@@ -85,46 +85,47 @@ function updateYearHeaders(initialYear) {
   }
 }
 
-// Function to calculate success rates and PPG-1 values
 function calculate() {
   const numeratorInputs = document.querySelectorAll('.inputNumerator');
   const denominatorInputs = document.querySelectorAll('.inputDenominator');
 
-  // Convert NodeLists to arrays for easier manipulation
-  const numerators = Array.from(numeratorInputs).map(input => parseFloat(input.value) || 0);
-  const denominators = Array.from(denominatorInputs).map(input => parseFloat(input.value) || 0);
+  // Calculate total numerator and denominator
+  const totalNumerator = Array.from(numeratorInputs).reduce((sum, input) => sum + (parseFloat(input.value) || 0), 0);
+  const totalDenominator = Array.from(denominatorInputs).reduce((sum, input) => sum + (parseFloat(input.value) || 0), 0);
 
-  // Calculate total numerator and denominator for all groups
-  const totalNumerator = numerators.reduce((sum, value) => sum + value, 0);
-  const totalDenominator = denominators.reduce((sum, value) => sum + value, 0);
+  // Debugging: Log total numerator and denominator
+  console.log(`Total Numerator: ${totalNumerator}, Total Denominator: ${totalDenominator}`);
 
-  // Loop through each row (subgroup) and calculate success rates and PPG-1
-  for (let row = 0; row < numerators.length / 4; row++) {
+  for (let row = 0; row < 9; row++) {
     for (let col = 0; col < 4; col++) {
-      const numerator = numerators[row * 4 + col];
-      const denominator = denominators[row * 4 + col];
+      const numerator = parseFloat(numeratorInputs[row * 4 + col].value) || 0;
+      const denominator = parseFloat(denominatorInputs[row * 4 + col].value) || 0;
 
-      // Ensure denominator is non-zero to avoid division by zero
+      // Ensure denominator is non-zero
       if (denominator > 0) {
-        // 1. Success rate for the subgroup
-        const successRate = (numerator / denominator).toFixed(4);
+        // Calculate the group success rate for the current row and column
+        const groupSuccessRate = (numerator / denominator).toFixed(4);
 
-        // 2. Adjusted numerator and denominator (excluding current group)
+        // Calculate adjusted numerator and denominator by removing the current group from the totals
         const adjustedNumerator = totalNumerator - numerator;
         const adjustedDenominator = totalDenominator - denominator;
 
-        // 3. Adjusted success rate for all other groups
+        // Ensure adjusted denominator is non-zero to avoid division by zero
         const adjustedSuccessRate = adjustedDenominator > 0 ? (adjustedNumerator / adjustedDenominator).toFixed(4) : 0;
 
-        // 4. Calculate PPG-1
-        const ppg1Value = (successRate - adjustedSuccessRate).toFixed(4);
+        // Calculate PPG-1: Group Success Rate - Adjusted Success Rate
+        const ppg1Value = ((groupSuccessRate - adjustedSuccessRate) * 100).toFixed(1);
+
+        // Debugging: Log individual cell values
+        console.log(`Row: ${row}, Col: ${col}, Numerator: ${numerator}, Denominator: ${denominator}`);
+        console.log(`Group Success Rate: ${groupSuccessRate}, Adjusted Success Rate: ${adjustedSuccessRate}, PPG-1: ${ppg1Value}`);
 
         // Update the success rate and PPG-1 in the table
-        document.getElementById(`successRate-${row}-${col}`).innerText = (successRate * 100).toFixed(1) + '%';
+        document.getElementById(`successRate-${row}-${col}`).innerText = (groupSuccessRate * 100).toFixed(1) + '%';
         const ppg1Cell = document.getElementById(`ppg1Value-${row}-${col}`);
-        ppg1Cell.innerText = (ppg1Value * 100).toFixed(1) + '%';
+        ppg1Cell.innerText = ppg1Value + '%';
 
-        // Apply background color based on the PPG-1 value
+        // Apply background color based on value
         const bgColor = getHeatmapColor(ppg1Value);
         ppg1Cell.style.backgroundColor = bgColor;
         ppg1Cell.style.color = bgColor === '#ff0000' ? '#ffffff' : '#000000'; // White text on red background, black otherwise
@@ -140,14 +141,13 @@ function calculate() {
   }
 }
 
-// Function to return a background color based on PPG-1 value
 function getHeatmapColor(value) {
   const numValue = parseFloat(value);
   if (numValue > 0) {
-    return '#FEEDDE'; // Neutral color
+    return '#FEEDDE'; // Neutral
   } else if (numValue >= -10) {
-    return '#ffc7ce'; // Light red/pink for moderate negative PPG-1 values
+    return '#ffc7ce'; // Pink
   } else {
-    return '#ff0000'; // Dark red for strong negative PPG-1 values
+    return '#ff0000'; // Red
   }
 }
