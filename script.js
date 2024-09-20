@@ -1,3 +1,71 @@
+document.addEventListener('DOMContentLoaded', (event) => {
+  const numeratorInputs = document.querySelectorAll('.inputNumerator');
+  const denominatorInputs = document.querySelectorAll('.inputDenominator');
+  const subgroupInputs = document.querySelectorAll('.inputSubgroup');
+  const yearHeaderInputs = document.querySelectorAll('.yearHeader');
+
+  // Initialize subgroup names and year headers across all tables
+  initializeSubgroups();
+  initializeYearHeaders();
+
+  // Add event listeners for each input field to recalculate when the values change
+  numeratorInputs.forEach(input => input.addEventListener('input', calculatePPG1));
+  denominatorInputs.forEach(input => input.addEventListener('input', calculatePPG1));
+  subgroupInputs.forEach((input, index) => {
+    input.addEventListener('input', () => updateSubgroup(index, input.value));
+  });
+
+  yearHeaderInputs.forEach((input, index) => {
+    if (index % 4 === 0) {  // Only the first year is editable
+      input.addEventListener('input', () => updateYearHeaders(input.value));
+    }
+  });
+
+  // Call calculate on page load to handle preset values
+  calculatePPG1();
+});
+
+// Function to autofill subgroup names across tables
+function initializeSubgroups() {
+  const subgroups = document.querySelectorAll('#numeratorTable .inputSubgroup');
+  subgroups.forEach((input, index) => {
+    const value = input.value;
+    updateSubgroup(index, value);
+  });
+}
+
+// Function to autofill year headers across tables
+function initializeYearHeaders() {
+  const initialYear = document.getElementById('year-0').value;
+  updateYearHeaders(initialYear);
+}
+
+// Update subgroup names across all tables
+function updateSubgroup(row, value) {
+  document.getElementById(`successSubgroup-${row}`).value = value;
+  document.getElementById(`denominatorSubgroup-${row}`).value = value;
+  document.getElementById(`ppgSubgroup-${row}`).value = value;
+}
+
+// Update year headers across all tables based on the first input
+function updateYearHeaders(initialYear) {
+  const yearRegex = /^(\d{4})-(\d{2})$/;
+  const match = initialYear.match(yearRegex);
+
+  if (match) {
+    const startYear = parseInt(match[1]);
+    let endYear = parseInt(match[2]);
+
+    for (let i = 0; i < 4; i++) {
+      const yearHeader = `${startYear + i}-${(endYear + i) % 100}`;
+      document.getElementById(`year-${i}`).value = yearHeader;
+      document.getElementById(`success-year-${i}`).value = yearHeader;
+      document.getElementById(`denominator-year-${i}`).value = yearHeader;
+      document.getElementById(`ppg-year-${i}`).value = yearHeader;
+    }
+  }
+}
+
 function calculatePPG1() {
   const numeratorInputs = document.querySelectorAll('.inputNumerator');
   const denominatorInputs = document.querySelectorAll('.inputDenominator');
