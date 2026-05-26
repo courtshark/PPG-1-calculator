@@ -1,29 +1,70 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Success Rates and PPG-1 Values</title>
+  <title>OCC PPG-1 Disproportionate Impact Calculator</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-
-    <div class="top-right-image">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Orange_Coast_College_logo.svg" alt="Top Right Image">
+  <main class="page-shell">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Orange Coast College</p>
+        <h1>Equity Gap (Percentage Point Gap Minus One) Calculator</h1>
+        <p class="hero-text">
+          Compare each subgroup to all other students combined using the official California
+          Community Colleges Chancellor's Office PPG-1 methodology for positive outcomes.
+        </p>
       </div>
+      <div class="hero-mark">
+        <img
+          src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Orange_Coast_College_logo.svg"
+          alt="Orange Coast College logo"
+        >
+      </div>
+    </section>
 
-  <h1>Equity Gap (Percentage Point Gap - 1) Calculator</h1>
-  <h3>Links to find data:</h3>
-  <div class="top-right-links">
-    <a href="https://app.powerbi.com/view?r=eyJrIjoiZGVlMTYwNjAtYjg0MS00ZGJhLTkyNjMtZjk5ZDIzMGMwZjYzIiwidCI6ImVlNTdmNTU1LTFkNzAtNGE4Yi04ZWRhLWMwZjQwNzFhNDQ1OCIsImMiOjZ9" target=" _blank">Course Success & Retention Rate</a>
-    <a href="https://app.powerbi.com/view?r=eyJrIjoiNDZkNWY5MzgtMjc3NC00YWVkLWEyMjUtODFmMzc3Mzg5NDkyIiwidCI6ImVlNTdmNTU1LTFkNzAtNGE4Yi04ZWRhLWMwZjQwNzFhNDQ1OCIsImMiOjZ9" target=" _blank">Student Persistence</a>
-    <a href="https://app.powerbi.com/view?r=eyJrIjoiMDU3YjYwYTItZDA4Mi00ZDJmLTgyMTgtYzk2NzNhYzA1YjczIiwidCI6ImVlNTdmNTU1LTFkNzAtNGE4Yi04ZWRhLWMwZjQwNzFhNDQ1OCIsImMiOjZ9" target=" _blank">Enrollments</a>
-  </div>
+    <section class="info-grid">
+      <article class="info-card">
+        <h2>How DI Is Flagged</h2>
+        <p><code>PPG-1 = subgroup rate - all other rate</code></p>
+        <p>For positive outcomes, disproportionate impact is flagged when <code>PPG-1 &le; -E</code>.</p>
+        <p><code>E = max(1.96 &times; sqrt(p&#770;(1-p&#770;)/n), 2.0%)</code></p>
+      </article>
+
+      <article class="info-card">
+        <h2>Quick Notes</h2>
+        <ul class="note-list">
+          <li>Groups with <code>n &le; 10</code> are marked as insufficient data.</li>
+          <li>Each analysis cell shows the all-other rate, margin of error, and gap-closing estimate.</li>
+          <li>Counts must follow <code>successes &le; total count</code>.</li>
+        </ul>
+      </article>
+
+      <article class="info-card">
+        <h2>Official Resources</h2>
+        <div class="resource-links">
+          <a href="https://www.cccco.edu/-/media/CCCCO-Website/docs/data-resources/ccccopercentagepointgapminusoneppg1methodologynotes2022accessible20220414a11y.pdf" target="_blank" rel="noreferrer">CCCCO PPG-1 Methodology Notes</a>
+          <a href="https://www.cccco.edu/About-Us/Chancellors-Office/Divisions/Research-Analytics-Data/data-resources" target="_blank" rel="noreferrer">CCCCO Data Resources</a>
+        </div>
+      </article>
+    </section>
+
+    <section class="info-card data-card">
+      <h2>Data Sources</h2>
+      <div class="resource-links">
+        <a href="https://app.powerbi.com/view?r=eyJrIjoiZGVlMTYwNjAtYjg0MS00ZGJhLTkyNjMtZjk5ZDIzMGMwZjYzIiwidCI6ImVlNTdmNTU1LTFkNzAtNGE4Yi04ZWRhLWMwZjQwNzFhNDQ1OCIsImMiOjZ9" target="_blank" rel="noreferrer">Course Success and Retention Rate</a>
+        <a href="https://app.powerbi.com/view?r=eyJrIjoiNDZkNWY5MzgtMjc3NC00YWVkLWEyMjUtODFmMzc3Mzg5NDkyIiwidCI6ImVlNTdmNTU1LTFkNzAtNGE4Yi04ZWRhLWMwZjQwNzFhNDQ1OCIsImMiOjZ9" target="_blank" rel="noreferrer">Student Persistence</a>
+        <a href="https://app.powerbi.com/view?r=eyJrIjoiMDU3YjYwYTItZDA4Mi00ZDJmLTgyMTgtYzk2NzNhYzA1YjczIiwidCI6ImVlNTdmNTU1LTFkNzAtNGE4Yi04ZWRhLWMwZjQwNzFhNDQ1OCIsImMiOjZ9" target="_blank" rel="noreferrer">Enrollments</a>
+      </div>
+    </section>
 
   <div class="table-container">
     <div class="table-wrapper">
-      <h2>Equity Metric</h2>
-      <h4>Enter the subgroup count for the goal metric (Success, Retention, Enrollments, etc.)</h4>
+      <h2>Outcome Counts</h2>
+      <h4>Enter the number of students in each subgroup who achieved the outcome you are measuring.</h4>
       <table id="numeratorTable">
         <tr>
           <th>Race/Ethnicity</th>
@@ -100,8 +141,8 @@
       </table>
     </div>
     <div class="table-wrapper">
-      <h2>Disaggregated Success Rates</h2>
-      <h4>This table shows the rates for each equity metric and the total population per ethnicity </h4>
+      <h2>Subgroup Success Rates</h2>
+      <h4>Each cell shows the subgroup rate and the raw count used to calculate it.</h4>
       <table id="successRatesTable">
         <tr>
           <th>Race/Ethnicity</th>
@@ -181,7 +222,7 @@
   <div class="table-container">
     <div class="table-wrapper">
       <h2>Total Count</h2>
-      <h4>Enter the total counts for each race/ethnicity to represent the overall population </h4>
+      <h4>Enter the total subgroup population used as the denominator for the selected outcome.</h4>
       <table id="denominatorTable">
         <tr>
           <th>Race/Ethnicity</th>
@@ -257,8 +298,14 @@
       </table>
     </div>
     <div class="table-wrapper">
-      <h2>Percentage Point Gap Minus One (PPG-1)</h2>
-      <h4>The PPG-1 table measures disparities in educational outcomes between student subgroups and the rest of the student body. </h4>
+      <h2>PPG-1 DI Analysis</h2>
+      <h4>Each cell shows the PPG-1 value, the all-other comparison rate, the margin of error threshold, and the DI decision.</h4>
+      <div class="legend-row">
+        <span class="legend-pill legend-di">DI flagged</span>
+        <span class="legend-pill legend-watch">Below peers</span>
+        <span class="legend-pill legend-good">Within threshold or higher than peers</span>
+        <span class="legend-pill legend-muted">Insufficient data</span>
+      </div>
       <table id="ppg1ValuesTable">
         <tr>
           <th>Race/Ethnicity</th>
@@ -334,6 +381,13 @@
     </div>
   </div>
 
+  <p class="footnote">
+    Based on the California Community Colleges Chancellor's Office 2022 PPG-1 methodology for
+    positive outcomes. A negative gap is flagged only when the observed PPG-1 is at or below the
+    subgroup margin of error threshold.
+  </p>
+
+  </main>
   <script src="script.js"></script>
 </body>
 </html>

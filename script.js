@@ -1,183 +1,303 @@
-document.addEventListener('DOMContentLoaded', (event) => {
+const ROW_COUNT = 9;
+const COLUMN_COUNT = 4;
+const Z_SCORE_95 = 1.96;
+const MIN_MARGIN_OF_ERROR = 2;
+const MINIMUM_REPORTABLE_N = 10;
+
+document.addEventListener('DOMContentLoaded', () => {
   const numeratorInputs = document.querySelectorAll('.inputNumerator');
   const denominatorInputs = document.querySelectorAll('.inputDenominator');
-  const subgroupInputs = document.querySelectorAll('.inputSubgroup');
-  const yearHeaderInputs = document.querySelectorAll('.yearHeader');
+  const subgroupInputs = document.querySelectorAll('#numeratorTable .inputSubgroup');
+  const firstYearInput = document.getElementById('year-0');
 
-  // Initialize subgroup names and year headers across all tables
+  [...numeratorInputs, ...denominatorInputs].forEach((input) => {
+    input.min = '0';
+    input.step = '1';
+    input.inputMode = 'numeric';
+    input.addEventListener('input', recalculateAll);
+  });
+
+  subgroupInputs.forEach((input, row) => {
+    input.addEventListener('input', () => updateSubgroup(row, input.value));
+  });
+
+  firstYearInput.addEventListener('input', () => updateYearHeaders(firstYearInput.value));
+
   initializeSubgroups();
   initializeYearHeaders();
-
-  // Add event listeners for each input field to recalculate when the values change
-  numeratorInputs.forEach(input => {
-    input.addEventListener('input', () => {
-      calculatePPG1();
-      calculateSuccessRates();  // Call the new function here
-    });
-  });
-
-  denominatorInputs.forEach(input => {
-    input.addEventListener('input', () => {
-      calculatePPG1();
-      calculateSuccessRates();  // Call the new function here
-    });
-  });
-
-  subgroupInputs.forEach((input, index) => {
-    input.addEventListener('input', () => updateSubgroup(index, input.value));
-  });
-
-  yearHeaderInputs.forEach((input, index) => {
-    if (index % 4 === 0) {  // Only the first year is editable
-      input.addEventListener('input', () => updateYearHeaders(input.value));
-    }
-  });
-
-  // Call calculations on page load to handle preset values
-  calculatePPG1();
-  calculateSuccessRates();  // Initial call to fill the success rates table
+  recalculateAll();
 });
 
-// Function to autofill subgroup names across tables
 function initializeSubgroups() {
   const subgroups = document.querySelectorAll('#numeratorTable .inputSubgroup');
-  subgroups.forEach((input, index) => {
-    const value = input.value;
-    updateSubgroup(index, value);
+
+  subgroups.forEach((input, row) => {
+    updateSubgroup(row, input.value);
   });
 }
 
-// Function to autofill year headers across tables
 function initializeYearHeaders() {
-  const initialYear = document.getElementById('year-0').value;
-  updateYearHeaders(initialYear);
+  updateYearHeaders(document.getElementById('year-0').value);
 }
 
-// Update subgroup names across all tables
 function updateSubgroup(row, value) {
   document.getElementById(`successSubgroup-${row}`).value = value;
   document.getElementById(`denominatorSubgroup-${row}`).value = value;
   document.getElementById(`ppgSubgroup-${row}`).value = value;
 }
 
-// Update year headers across all tables based on the first input
 function updateYearHeaders(initialYear) {
   const yearRegex = /^(\d{4})-(\d{2})$/;
-  const match = initialYear.match(yearRegex);
+  const match = initialYear.trim().match(yearRegex);
 
-  if (match) {
-    const startYear = parseInt(match[1]);
-    let endYear = parseInt(match[2]);
+  if (!match) {
+    return;
+  }
 
-    for (let i = 0; i < 4; i++) {
-      const yearHeader = `${startYear + i}-${(endYear + i) % 100}`;
-      document.getElementById(`year-${i}`).value = yearHeader;
-      document.getElementById(`success-year-${i}`).value = yearHeader;
-      document.getElementById(`denominator-year-${i}`).value = yearHeader;
-      document.getElementById(`ppg-year-${i}`).value = yearHeader;
-    }
+  const startYear = Number.parseInt(match[1], 10);
+  const endYear = Number.parseInt(match[2], 10);
+
+  for (let column = 0; column < COLUMN_COUNT; column += 1) {
+    const endSuffix = String((endYear + column) % 100).padStart(2, '0');
+    const yearHeader = `${startYear + column}-${endSuffix}`;
+
+    document.getElementById(`year-${column}`).value = yearHeader;
+    document.getElementById(`success-year-${column}`).value = yearHeader;
+    document.getElementById(`denominator-year-${column}`).value = yearHeader;
+    document.getElementById(`ppg-year-${column}`).value = yearHeader;
   }
 }
 
-// Function to calculate Percentage Point Gap Minus One (PPG-1)
-function calculatePPG1() {
-  const numeratorInputs = document.querySelectorAll('.inputNumerator');
-  const denominatorInputs = document.querySelectorAll('.inputDenominator');
+function recalculateAll() {
+  const grid = buildDataGrid();
 
-  const columnTotals = {
-    totalNumerator: [0, 0, 0, 0],
-    totalDenominator: [0, 0, 0, 0]
+  calculateSuccessRates(grid);
+  calculatePpgAnalysis(grid);
+}
+
+function buildDataGrid() {
+  const grid = [];
+
+  for (let row = 0; row < ROW_COUNT; row += 1) {
+    const columnValues = [];
+
+    for (let column = 0; column < COLUMN_COUNT; column += 1) {
+      columnValues.push(readCell(row, column));
+    }
+
+    grid.push(columnValues);
+  }
+
+  return grid;
+}
+
+function readCell(row, column) {
+  const numeratorInput = document.getElementById(`inputNumerator-${row}-${column}`);
+  const denominatorInput = document.getElementById(`inputDenominator-${row}-${column}`);
+  const numeratorRaw = parseInputValue(numeratorInput.value);
+  const denominatorRaw = parseInputValue(denominatorInput.value);
+  const numerator = numeratorRaw ?? 0;
+  const denominator = denominatorRaw ?? 0;
+
+  let invalidReason = '';
+
+  if (numeratorRaw !== null && numeratorRaw < 0) {
+    invalidReason = 'Outcome counts cannot be negative.';
+  } else if (denominatorRaw !== null && denominatorRaw < 0) {
+    invalidReason = 'Population counts cannot be negative.';
+  } else if (numeratorRaw !== null && !Number.isInteger(numeratorRaw)) {
+    invalidReason = 'Outcome counts must be whole numbers.';
+  } else if (denominatorRaw !== null && !Number.isInteger(denominatorRaw)) {
+    invalidReason = 'Population counts must be whole numbers.';
+  } else if (numeratorRaw !== null && denominatorRaw === null) {
+    invalidReason = 'Enter a total population count for this subgroup.';
+  } else if (denominator > 0 && numerator > denominator) {
+    invalidReason = 'Outcome counts cannot be greater than the subgroup total.';
+  } else if (denominator === 0 && numerator > 0) {
+    invalidReason = 'Outcome counts require a subgroup total greater than zero.';
+  }
+
+  syncInputState(numeratorInput, denominatorInput, invalidReason);
+
+  return {
+    row,
+    column,
+    numerator,
+    denominator,
+    hasPopulation: denominator > 0,
+    isInvalid: invalidReason !== '',
+    invalidReason
   };
+}
 
-  for (let col = 0; col < 4; col++) {
-    let validSubgroups = 0;
+function syncInputState(numeratorInput, denominatorInput, invalidReason) {
+  const isInvalid = invalidReason !== '';
 
-    for (let row = 0; row < 9; row++) {
-      const numerator = parseFloat(numeratorInputs[row * 4 + col].value) || 0;
-      const denominator = parseFloat(denominatorInputs[row * 4 + col].value) || 0;
+  [numeratorInput, denominatorInput].forEach((input) => {
+    input.classList.toggle('input-error', isInvalid);
 
-      if (numerator > 0 && denominator > 0) {
-        validSubgroups++;
-        columnTotals.totalNumerator[col] += numerator;
-        columnTotals.totalDenominator[col] += denominator;
-      }
-    }
-
-    if (validSubgroups >= 2) {
-      for (let row = 0; row < 9; row++) {
-        const numerator = parseFloat(numeratorInputs[row * 4 + col].value) || 0;
-        const denominator = parseFloat(denominatorInputs[row * 4 + col].value) || 0;
-
-        if (denominator > 0 && columnTotals.totalDenominator[col] > 0) {
-          const groupSuccessRate = numerator / denominator;
-
-          const adjustedNumerator = columnTotals.totalNumerator[col] - numerator;
-          const adjustedDenominator = columnTotals.totalDenominator[col] - denominator;
-
-          const adjustedSuccessRate = adjustedDenominator > 0 ? adjustedNumerator / adjustedDenominator : 0;
-
-          const ppg1Value = ((groupSuccessRate - adjustedSuccessRate) * 100).toFixed(1);
-
-          const ppg1Cell = document.getElementById(`ppg1Value-${row}-${col}`);
-          ppg1Cell.innerText = `${ppg1Value}%`;
-
-          const bgColor = getHeatmapColor(ppg1Value);
-          ppg1Cell.style.backgroundColor = bgColor;
-          ppg1Cell.style.color = bgColor === '#ff0000' ? '#ffffff' : '#000000';
-        } else {
-          const ppg1Cell = document.getElementById(`ppg1Value-${row}-${col}`);
-          ppg1Cell.innerText = '';
-          ppg1Cell.style.backgroundColor = '';
-          ppg1Cell.style.color = '';
-        }
-      }
+    if (isInvalid) {
+      input.title = invalidReason;
     } else {
-      for (let row = 0; row < 9; row++) {
-        const ppg1Cell = document.getElementById(`ppg1Value-${row}-${col}`);
-        ppg1Cell.innerText = '';
-        ppg1Cell.style.backgroundColor = '';
-        ppg1Cell.style.color = '';
+      input.removeAttribute('title');
+    }
+  });
+}
+
+function calculateSuccessRates(grid) {
+  for (let row = 0; row < ROW_COUNT; row += 1) {
+    for (let column = 0; column < COLUMN_COUNT; column += 1) {
+      const cell = grid[row][column];
+      const outputCell = document.getElementById(`successRate-${row}-${column}`);
+
+      clearOutputCell(outputCell);
+
+      if (cell.isInvalid) {
+        renderInfoCell(outputCell, 'Check counts', cell.invalidReason, 'status-invalid');
+        continue;
       }
+
+      if (!cell.hasPopulation) {
+        continue;
+      }
+
+      const successRate = (cell.numerator / cell.denominator) * 100;
+
+      outputCell.className = 'rate-cell';
+      outputCell.style.backgroundColor = getRateColor(successRate);
+      outputCell.innerHTML = `
+        <div class="rate-value">${formatPercent(successRate)}</div>
+        <div class="rate-meta">${cell.numerator} / ${cell.denominator}</div>
+      `;
     }
   }
 }
 
-// New function to calculate Disaggregated Success Rates
-function calculateSuccessRates() {
-  const numeratorInputs = document.querySelectorAll('.inputNumerator');
-  const denominatorInputs = document.querySelectorAll('.inputDenominator');
+function calculatePpgAnalysis(grid) {
+  for (let column = 0; column < COLUMN_COUNT; column += 1) {
+    const populationCells = [];
 
-  for (let col = 0; col < 4; col++) {
-    for (let row = 0; row < 9; row++) {
-      const numerator = parseFloat(numeratorInputs[row * 4 + col].value) || 0;
-      const denominator = parseFloat(denominatorInputs[row * 4 + col].value) || 0;
+    for (let row = 0; row < ROW_COUNT; row += 1) {
+      const cell = grid[row][column];
 
-      if (denominator > 0) {
-        const successRate = ((numerator / denominator) * 100).toFixed(1);
-
-        const successRateCell = document.getElementById(`successRate-${row}-${col}`);
-        successRateCell.innerText = `${successRate}%`;
-
-        successRateCell.style.backgroundColor = getHeatmapColor(successRate);
-        successRateCell.style.color = successRateCell.style.backgroundColor === '#ff0000' ? '#ffffff' : '#000000';
-      } else {
-        const successRateCell = document.getElementById(`successRate-${row}-${col}`);
-        successRateCell.innerText = '';
-        successRateCell.style.backgroundColor = '';
-        successRateCell.style.color = '';
+      if (!cell.isInvalid && cell.hasPopulation) {
+        populationCells.push(cell);
       }
+    }
+
+    const totalNumerator = populationCells.reduce((sum, cell) => sum + cell.numerator, 0);
+    const totalDenominator = populationCells.reduce((sum, cell) => sum + cell.denominator, 0);
+
+    for (let row = 0; row < ROW_COUNT; row += 1) {
+      const cell = grid[row][column];
+      const outputCell = document.getElementById(`ppg1Value-${row}-${column}`);
+
+      clearOutputCell(outputCell);
+
+      if (cell.isInvalid) {
+        renderInfoCell(outputCell, 'Check counts', cell.invalidReason, 'status-invalid');
+        continue;
+      }
+
+      if (!cell.hasPopulation) {
+        continue;
+      }
+
+      if (cell.denominator <= MINIMUM_REPORTABLE_N) {
+        renderInfoCell(
+          outputCell,
+          'Insufficient data',
+          `n = ${cell.denominator}. The CCCCO methodology advises against estimating DI when n \u2264 10.`,
+          'status-muted'
+        );
+        continue;
+      }
+
+      const allOtherDenominator = totalDenominator - cell.denominator;
+      const allOtherNumerator = totalNumerator - cell.numerator;
+
+      if (populationCells.length < 2 || allOtherDenominator <= 0) {
+        renderInfoCell(
+          outputCell,
+          'Need more data',
+          'Enter at least two populated subgroups in this year to compare the target group against all other students.',
+          'status-muted'
+        );
+        continue;
+      }
+
+      const subgroupRate = cell.numerator / cell.denominator;
+      const allOtherRate = allOtherNumerator / allOtherDenominator;
+      const ppg1 = (subgroupRate - allOtherRate) * 100;
+      const marginOfError = calculateMarginOfError(subgroupRate, cell.denominator);
+      const studentsNeeded = ppg1 < 0 ? Math.round((Math.abs(ppg1) / 100) * cell.denominator) : null;
+      const status = getPpgStatus(ppg1, marginOfError);
+
+      outputCell.className = `analysis-cell ${status.className}`;
+      outputCell.innerHTML = `
+        <div class="ppg-value">${formatPercent(ppg1)}</div>
+        <div class="ppg-meta">All other: ${formatPercent(allOtherRate * 100)}</div>
+        <div class="ppg-meta">Threshold E: ${formatPercent(marginOfError)}</div>
+        <div class="ppg-meta">Close gap: ${studentsNeeded === null ? '--' : studentsNeeded}</div>
+        <span class="status-badge">${status.label}</span>
+      `;
     }
   }
 }
 
-// Helper function to apply heatmap color based on value
-function getHeatmapColor(value) {
-  const numValue = parseFloat(value);
-  if (numValue > 0) {
-    return '#FEEDDE';  // Neutral for positive values
-  } else if (numValue >= -10) {
-    return '#ffc7ce';  // Pink for small negative values
-  } else {
-    return '#ff0000';  // Red for larger negative values
+function calculateMarginOfError(subgroupRate, denominator) {
+  const calculatedMargin = Z_SCORE_95 * Math.sqrt((subgroupRate * (1 - subgroupRate)) / denominator) * 100;
+
+  return Math.max(calculatedMargin, MIN_MARGIN_OF_ERROR);
+}
+
+function getPpgStatus(ppg1, marginOfError) {
+  if (ppg1 <= -marginOfError) {
+    return { label: 'DI flagged', className: 'status-di' };
   }
+
+  if (ppg1 < 0) {
+    return { label: 'Below peers', className: 'status-watch' };
+  }
+
+  if (ppg1 >= marginOfError) {
+    return { label: 'Higher than peers', className: 'status-high' };
+  }
+
+  return { label: 'Within threshold', className: 'status-good' };
+}
+
+function renderInfoCell(outputCell, title, detail, className) {
+  outputCell.className = `analysis-cell ${className}`;
+  outputCell.innerHTML = `
+    <div class="ppg-value">${title}</div>
+    <div class="ppg-note">${detail}</div>
+    <span class="status-badge">${title}</span>
+  `;
+}
+
+function clearOutputCell(outputCell) {
+  outputCell.className = '';
+  outputCell.style.backgroundColor = '';
+  outputCell.innerHTML = '';
+}
+
+function parseInputValue(rawValue) {
+  if (rawValue.trim() === '') {
+    return null;
+  }
+
+  const parsedValue = Number(rawValue);
+  return Number.isFinite(parsedValue) ? parsedValue : null;
+}
+
+function formatPercent(value) {
+  return `${value.toFixed(1)}%`;
+}
+
+function getRateColor(rate) {
+  const boundedRate = Math.min(Math.max(rate, 0), 100);
+  const hue = (boundedRate / 100) * 120;
+
+  return `hsl(${hue} 48% 89%)`;
 }
