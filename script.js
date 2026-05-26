@@ -631,17 +631,21 @@ function autoDetectColumns(header) {
     age:     find('agegroup', 'age'),
     success: find('success', 'successful', 'complete', 'pass'),
     total:   find('census', 'headcount', 'enrolled', 'total', 'count'),
-    course:  find('course', 'section', 'crn', 'class', 'discipline', 'subject', 'program'),
+    course:     find('course', 'section', 'crn', 'class', 'discipline', 'subject', 'program'),
+    retention:  find('retention', 'retain', 'persist', 'endofterm'),
   };
 }
 
 let rawParsedRows = [];
 let rawHeader = [];
 
-// Stored after import — used by course filter to re-aggregate without re-importing
+// Stored after import — used by course/outcome filters to re-aggregate without re-importing
 let storedRawRows    = [];
 let storedRawColMap  = {};   // { yearCol, raceCol, genderCol, ageCol, successCol, totalCol }
 let storedCourseCol  = -1;
+let storedOutcomes   = [];   // [{ col, label }, ...] — outcomes user can switch between
+let activeOutcomeIdx = 0;    // index into storedOutcomes
+let activeCourseValue = '';  // '' = All Courses
 
 function parseRaw(text) {
   // Always keep header row (raw import needs it for column detection)
@@ -720,9 +724,9 @@ function loadRawRows(allRows, fileName) {
 function triggerColumnDetection() {
   const detected = autoDetectColumns(rawHeader);
 
-  ['mapYear','mapRace','mapGender','mapAge','mapSuccess','mapTotal','mapCourse'].forEach((selectId, i) => {
+  ['mapYear','mapRace','mapGender','mapAge','mapSuccess','mapTotal','mapCourse','mapRetention'].forEach((selectId, i) => {
     const sel = document.getElementById(selectId);
-    const keyMap = ['year','race','gender','age','success','total','course'];
+    const keyMap = ['year','race','gender','age','success','total','course','retention'];
     const detectedIdx = detected[keyMap[i]];
     sel.innerHTML = '<option value="-1">— not used —</option>' +
       rawHeader.map((col, idx) =>
@@ -797,30 +801,32 @@ function aggregateRaw(rows, yearCol, sgCol, successCol, totalCol, labelMap = nul
 }
 
 function applyRawImport() {
-  const yearCol    = parseInt(document.getElementById('mapYear').value);
-  const raceCol    = parseInt(document.getElementById('mapRace').value);
-  const genderCol  = parseInt(document.getElementById('mapGender').value);
-  const ageCol     = parseInt(document.getElementById('mapAge').value);
-  const successCol = parseInt(document.getElementById('mapSuccess').value);
-  const totalCol   = parseInt(document.getElementById('mapTotal').value);
-  const courseCol  = parseInt(document.getElementById('mapCourse').value);
+  const yearCol      = parseInt(document.getElementById('mapYear').value);
+  const raceCol      = parseInt(document.getElementById('mapRace').value);
+  const genderCol    = parseInt(document.getElementById('mapGender').value);
+  const ageCol       = parseInt(document.getElementById('mapAge').value);
+  const successCol   = parseInt(document.getElementById('mapSuccess').value);
+  const totalCol     = parseInt(document.getElementById('mapTotal').value);
+  const courseCol    = parseInt(document.getElementById('mapCourse').value);
+  const retentionCol = parseInt(document.getElementById('mapRetention').value);
 
-  // Store raw data + column map so the course filter can re-aggregate without re-importing
-  storedRawRows   = rawParsedRows.slice();
-  storedRawColMap = { yearCol, raceCol, genderCol, ageCol, successCol, totalCol };
-  storedCourseCol = courseCol;
+  // Store raw data + column map for dynamic re-aggregation
+  storedRawRows    = rawParsedRows.slice();
+  storedRawColMap  = { yearCol, raceCol, genderCol, ageCol, successCol, totalCol };
+  storedCourseCol  = courseCol;
+  activeCourseValue = '';
 
-  // Aggregate & save (all rows = "All Courses")
-  populateTabsFromRows(rawParsedRows, storedRawColMap);
+  // Build outcomes list
+  storedOutcomes = [];
+  if (successCol >= 0)   storedOutcomes.push({ col: successCol,   label: rawHeader[successCol]   || 'Success' });
+  if (retentionCol >= 0) storedOutcomes.push({ col: retentionCol, label: rawHeader[retentionCol] || 'Retention' });
+  activeOutcomeIdx = 0;
 
-  // Build course filter bar if a course column was mapped
-  if (courseCol >= 0) {
-    buildCourseFilterBar(rawParsedRows, courseCol);
-  } else {
-    document.getElementById('courseFilterBar').classList.add('hidden');
-  }
+  // First aggregation: all rows, first outcome
+  reAggregate();
+  renderFilterBar();
 
-  // Switch to race tab (or first populated tab) and reload
+  // Switch to race tab (or first populated) and reload
   const firstTabId = raceCol >= 0 ? 'race' : genderCol >= 0 ? 'gender' : 'age';
   activeTabId = firstTabId;
   localStorage.setItem(STORAGE_PREFIX + 'activeTab', activeTabId);
@@ -835,7 +841,7 @@ function applyRawImport() {
   showToast(`Imported into: ${tabNames.join(', ')}`);
 }
 
-// Aggregate all relevant demographic dimensions from a row set and save to localStorage
+// Aggregate all demographic tabs from a row set + effective column map
 function populateTabsFromRows(rows, colMap) {
   const { yearCol, raceCol, genderCol, ageCol, successCol, totalCol } = colMap;
   if (raceCol   >= 0) saveAggToTab('race',   aggregateRaw(rows, yearCol, raceCol,   successCol, totalCol));
@@ -843,63 +849,95 @@ function populateTabsFromRows(rows, colMap) {
   if (ageCol    >= 0) saveAggToTab('age',    aggregateRaw(rows, yearCol, ageCol,    successCol, totalCol));
 }
 
-// ── Course filter bar ─────────────────────────────────────────────────────────
-
-function buildCourseFilterBar(rows, courseCol) {
-  // Unique course values sorted alphabetically
-  const courses = [...new Set(rows.map(r => r[courseCol]).filter(Boolean))].sort();
-
-  const bar = document.getElementById('courseFilterBar');
-  bar.innerHTML = '';
-
-  const label = document.createElement('span');
-  label.className = 'cf-label';
-  label.textContent = 'Course:';
-  bar.appendChild(label);
-
-  // "All Courses" pill
-  addCoursePill(bar, `All (${rows.length})`, '', true);
-
-  // One pill per course
-  courses.forEach(course => {
-    const count = rows.filter(r => r[courseCol] === course).length;
-    addCoursePill(bar, `${course} (${count})`, course, false);
-  });
-
-  bar.classList.remove('hidden');
-}
-
-function addCoursePill(bar, label, courseValue, active) {
-  const btn = document.createElement('button');
-  btn.className = 'course-pill' + (active ? ' active' : '');
-  btn.textContent = label;
-  btn.dataset.course = courseValue;
-  btn.addEventListener('click', () => selectCourse(courseValue));
-  bar.appendChild(btn);
-}
-
-function selectCourse(courseValue) {
-  // Highlight selected pill
-  document.querySelectorAll('.course-pill').forEach(p =>
-    p.classList.toggle('active', p.dataset.course === courseValue)
-  );
-
-  // Filter rows (empty string = All Courses)
-  const rows = courseValue
-    ? storedRawRows.filter(r => r[storedCourseCol] === courseValue)
+// Shared re-aggregation — applies both active outcome and active course filter
+function reAggregate() {
+  const rows = activeCourseValue
+    ? storedRawRows.filter(r => r[storedCourseCol] === activeCourseValue)
     : storedRawRows;
 
-  // Re-aggregate and repopulate all tabs
-  populateTabsFromRows(rows, storedRawColMap);
+  const effectiveSuccessCol = storedOutcomes[activeOutcomeIdx]?.col ?? storedRawColMap.successCol;
+  const colMap = { ...storedRawColMap, successCol: effectiveSuccessCol };
 
-  // Reload the currently visible tab
+  populateTabsFromRows(rows, colMap);
   loadTabState(activeTabId);
   initializeSubgroups();
   initializeYearHeaders();
   recalculateAll();
+}
 
-  const label = courseValue || 'All Courses';
-  showToast(`Showing: ${label} — ${rows.length} records`);
+// ── Filter bar (Outcome + Course) ─────────────────────────────────────────────
+
+function renderFilterBar() {
+  const bar = document.getElementById('courseFilterBar');
+  bar.innerHTML = '';
+  let hasContent = false;
+
+  // Outcome pills — only shown if 2+ outcomes available
+  if (storedOutcomes.length > 1) {
+    hasContent = true;
+    const lbl = document.createElement('span');
+    lbl.className = 'cf-label';
+    lbl.textContent = 'Outcome:';
+    bar.appendChild(lbl);
+
+    storedOutcomes.forEach((o, i) => {
+      addFilterPill(bar, o.label, 'outcome', String(i), i === activeOutcomeIdx);
+    });
+  }
+
+  // Course pills — only shown if course column was mapped
+  if (storedCourseCol >= 0) {
+    if (hasContent) {
+      const sep = document.createElement('span');
+      sep.className = 'cf-sep';
+      sep.textContent = '·';
+      bar.appendChild(sep);
+    }
+    hasContent = true;
+
+    const lbl = document.createElement('span');
+    lbl.className = 'cf-label';
+    lbl.textContent = 'Course:';
+    bar.appendChild(lbl);
+
+    addFilterPill(bar, `All (${storedRawRows.length})`, 'course', '', activeCourseValue === '');
+
+    const courses = [...new Set(storedRawRows.map(r => r[storedCourseCol]).filter(Boolean))].sort();
+    courses.forEach(course => {
+      const count = storedRawRows.filter(r => r[storedCourseCol] === course).length;
+      addFilterPill(bar, `${course} (${count})`, 'course', course, activeCourseValue === course);
+    });
+  }
+
+  bar.classList.toggle('hidden', !hasContent);
+}
+
+function addFilterPill(bar, label, type, value, active) {
+  const btn = document.createElement('button');
+  btn.className = 'course-pill' + (active ? ' active' : '');
+  btn.textContent = label;
+  btn.dataset.filterType  = type;
+  btn.dataset.filterValue = value;
+  btn.addEventListener('click', () => {
+    if (type === 'outcome') selectOutcome(parseInt(value));
+    else selectCourse(value);
+  });
+  bar.appendChild(btn);
+}
+
+function selectOutcome(idx) {
+  activeOutcomeIdx = idx;
+  renderFilterBar();
+  reAggregate();
+  showToast(`Outcome: ${storedOutcomes[idx].label}`);
+}
+
+function selectCourse(courseValue) {
+  activeCourseValue = courseValue;
+  renderFilterBar();
+  reAggregate();
+  const rows = courseValue ? storedRawRows.filter(r => r[storedCourseCol] === courseValue) : storedRawRows;
+  showToast(`Course: ${courseValue || 'All'} — ${rows.length} records`);
 }
 
 function saveAggToTab(tabId, agg) {

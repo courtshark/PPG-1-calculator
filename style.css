@@ -276,6 +276,13 @@ code {
   border-color: var(--navy);
   font-weight: 600;
 }
+.cf-sep {
+  color: var(--border);
+  font-size: 1.1rem;
+  line-height: 1;
+  margin: 0 .25rem;
+  user-select: none;
+}
 /* Optional label in import column map */
 .map-optional { font-size: .7rem; font-weight: 400; color: var(--muted); }
 
