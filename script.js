@@ -1,37 +1,247 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────────────────────
 const ROW_COUNT = 9;
 const COLUMN_COUNT = 4;
 const Z_SCORE_95 = 1.96;
 const MIN_MARGIN_OF_ERROR = 2;
 const MINIMUM_REPORTABLE_N = 10;
+const STORAGE_PREFIX = 'ppg1_';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Tab definitions
+// ─────────────────────────────────────────────────────────────────────────────
+const TABS = [
+  { id: 'race',       label: 'Race/Ethnicity',   defaultSubgroups: ['Am Ind/Ntv Alsk','Asian','Black','Hispanic/Latinx','More than one','Unknown','White','',''] },
+  { id: 'gender',     label: 'Gender',            defaultSubgroups: ['Men','Women','Non-binary/Other','Unknown','','','','',''] },
+  { id: 'age',        label: 'Age',               defaultSubgroups: ['Under 18','18–24','25–39','40+','Unknown','','','',''] },
+  { id: 'disability', label: 'Disability Status', defaultSubgroups: ['Students with Disability','Students without Disability','','','','','','',''] },
+  { id: 'foster',     label: 'Foster Youth',      defaultSubgroups: ['Foster Youth','Non-Foster Youth','','','','','','',''] },
+  { id: 'veterans',   label: 'Veterans',          defaultSubgroups: ['Veterans','Non-Veterans','','','','','','',''] },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// State
+// ─────────────────────────────────────────────────────────────────────────────
+let activeTabId = 'race';
+let ppg1Chart = null;
+let ppgResults = []; // [col][row] computed results
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DOMContentLoaded
+// ─────────────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  const numeratorInputs = document.querySelectorAll('.inputNumerator');
-  const denominatorInputs = document.querySelectorAll('.inputDenominator');
-  const subgroupInputs = document.querySelectorAll('#numeratorTable .inputSubgroup');
-  const firstYearInput = document.getElementById('year-0');
+  buildTabBar();
+  setupActionButtons();
+  setupInputListeners();
 
-  [...numeratorInputs, ...denominatorInputs].forEach((input) => {
-    input.min = '0';
-    input.step = '1';
-    input.inputMode = 'numeric';
-    input.addEventListener('input', recalculateAll);
-  });
-
-  subgroupInputs.forEach((input, row) => {
-    input.addEventListener('input', () => updateSubgroup(row, input.value));
-  });
-
-  firstYearInput.addEventListener('input', () => updateYearHeaders(firstYearInput.value));
+  const sharedState = decodeStateFromUrl();
+  if (sharedState) {
+    applySharedState(sharedState);
+  } else {
+    activeTabId = localStorage.getItem(STORAGE_PREFIX + 'activeTab') || 'race';
+    updateTabBar();
+    loadTabState(activeTabId);
+  }
 
   initializeSubgroups();
   initializeYearHeaders();
+  initChart();
   recalculateAll();
 });
 
-function initializeSubgroups() {
-  const subgroups = document.querySelectorAll('#numeratorTable .inputSubgroup');
+// ─────────────────────────────────────────────────────────────────────────────
+// Tab management
+// ─────────────────────────────────────────────────────────────────────────────
+function buildTabBar() {
+  const nav = document.getElementById('tabBar');
+  TABS.forEach(tab => {
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn';
+    btn.dataset.tab = tab.id;
+    btn.textContent = tab.label;
+    btn.setAttribute('role', 'tab');
+    btn.addEventListener('click', () => switchTab(tab.id));
+    nav.appendChild(btn);
+  });
+}
 
-  subgroups.forEach((input, row) => {
+function updateTabBar() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === activeTabId);
+    btn.setAttribute('aria-selected', btn.dataset.tab === activeTabId);
+  });
+}
+
+function switchTab(tabId) {
+  saveTabState(activeTabId);
+  activeTabId = tabId;
+  localStorage.setItem(STORAGE_PREFIX + 'activeTab', tabId);
+  updateTabBar();
+  loadTabState(tabId);
+  initializeSubgroups();
+  initializeYearHeaders();
+  recalculateAll();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LocalStorage — save & load
+// ─────────────────────────────────────────────────────────────────────────────
+function storageKey(tabId, inputId) {
+  return `${STORAGE_PREFIX}${tabId}_${inputId}`;
+}
+
+function saveTabState(tabId) {
+  const year0El = document.getElementById('year-0');
+  if (year0El) localStorage.setItem(storageKey(tabId, 'year-0'), year0El.value);
+
+  for (let row = 0; row < ROW_COUNT; row++) {
+    const sgEl = document.getElementById(`inputSubgroup-${row}`);
+    if (sgEl) localStorage.setItem(storageKey(tabId, `inputSubgroup-${row}`), sgEl.value);
+    for (let col = 0; col < COLUMN_COUNT; col++) {
+      const nEl = document.getElementById(`inputNumerator-${row}-${col}`);
+      const dEl = document.getElementById(`inputDenominator-${row}-${col}`);
+      if (nEl) localStorage.setItem(storageKey(tabId, `inputNumerator-${row}-${col}`), nEl.value);
+      if (dEl) localStorage.setItem(storageKey(tabId, `inputDenominator-${row}-${col}`), dEl.value);
+    }
+  }
+}
+
+function loadTabState(tabId) {
+  const tab = TABS.find(t => t.id === tabId);
+  const defaults = tab ? tab.defaultSubgroups : [];
+
+  // Year — inherit current year if tab has never been visited
+  const savedYear = localStorage.getItem(storageKey(tabId, 'year-0'));
+  const year0El = document.getElementById('year-0');
+  if (year0El) year0El.value = savedYear || year0El.value || '2020-21';
+
+  for (let row = 0; row < ROW_COUNT; row++) {
+    const savedSg = localStorage.getItem(storageKey(tabId, `inputSubgroup-${row}`));
+    const sgEl = document.getElementById(`inputSubgroup-${row}`);
+    if (sgEl) sgEl.value = savedSg !== null ? savedSg : (defaults[row] || '');
+
+    for (let col = 0; col < COLUMN_COUNT; col++) {
+      const savedN = localStorage.getItem(storageKey(tabId, `inputNumerator-${row}-${col}`));
+      const savedD = localStorage.getItem(storageKey(tabId, `inputDenominator-${row}-${col}`));
+      const nEl = document.getElementById(`inputNumerator-${row}-${col}`);
+      const dEl = document.getElementById(`inputDenominator-${row}-${col}`);
+      if (nEl) nEl.value = savedN || '';
+      if (dEl) dEl.value = savedD || '';
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Input listeners & auto-save
+// ─────────────────────────────────────────────────────────────────────────────
+function setupInputListeners() {
+  document.querySelectorAll('.inputNumerator, .inputDenominator').forEach(input => {
+    input.min = '0';
+    input.step = '1';
+    input.inputMode = 'numeric';
+    input.addEventListener('input', () => {
+      localStorage.setItem(storageKey(activeTabId, input.id), input.value);
+      recalculateAll();
+    });
+  });
+
+  document.querySelectorAll('#numeratorTable .inputSubgroup').forEach((input, row) => {
+    input.addEventListener('input', () => {
+      updateSubgroup(row, input.value);
+      localStorage.setItem(storageKey(activeTabId, input.id), input.value);
+    });
+  });
+
+  const year0El = document.getElementById('year-0');
+  year0El.addEventListener('input', () => {
+    updateYearHeaders(year0El.value);
+    localStorage.setItem(storageKey(activeTabId, 'year-0'), year0El.value);
+  });
+}
+
+function setupActionButtons() {
+  document.getElementById('btnImport').addEventListener('click', openImportModal);
+  document.getElementById('btnExport').addEventListener('click', exportCSV);
+  document.getElementById('btnShare').addEventListener('click', shareLink);
+  document.getElementById('btnPrint').addEventListener('click', () => window.print());
+  document.getElementById('btnClear').addEventListener('click', clearAll);
+
+  document.getElementById('importClose').addEventListener('click', closeImportModal);
+  document.getElementById('importCancel').addEventListener('click', closeImportModal);
+  document.getElementById('importApply').addEventListener('click', applyImport);
+  document.getElementById('importOverlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('importOverlay')) closeImportModal();
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// URL state — share & restore
+// ─────────────────────────────────────────────────────────────────────────────
+function encodeStateToUrl() {
+  const state = {
+    t: activeTabId,
+    y: document.getElementById('year-0')?.value || '2020-21',
+    g: [],
+    n: [],
+    d: [],
+  };
+  for (let row = 0; row < ROW_COUNT; row++) {
+    state.g.push(document.getElementById(`inputSubgroup-${row}`)?.value || '');
+    const nr = [], dr = [];
+    for (let col = 0; col < COLUMN_COUNT; col++) {
+      nr.push(document.getElementById(`inputNumerator-${row}-${col}`)?.value || '');
+      dr.push(document.getElementById(`inputDenominator-${row}-${col}`)?.value || '');
+    }
+    state.n.push(nr);
+    state.d.push(dr);
+  }
+  return btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+}
+
+function decodeStateFromUrl() {
+  const hash = window.location.hash;
+  if (!hash.startsWith('#s=')) return null;
+  try {
+    return JSON.parse(decodeURIComponent(escape(atob(hash.slice(3)))));
+  } catch { return null; }
+}
+
+function applySharedState(state) {
+  activeTabId = state.t || 'race';
+  localStorage.setItem(STORAGE_PREFIX + 'activeTab', activeTabId);
+  updateTabBar();
+
+  const year0El = document.getElementById('year-0');
+  if (year0El) year0El.value = state.y || '2020-21';
+
+  for (let row = 0; row < ROW_COUNT; row++) {
+    const sgEl = document.getElementById(`inputSubgroup-${row}`);
+    if (sgEl) sgEl.value = state.g?.[row] || '';
+    for (let col = 0; col < COLUMN_COUNT; col++) {
+      const nEl = document.getElementById(`inputNumerator-${row}-${col}`);
+      const dEl = document.getElementById(`inputDenominator-${row}-${col}`);
+      if (nEl) nEl.value = state.n?.[row]?.[col] || '';
+      if (dEl) dEl.value = state.d?.[row]?.[col] || '';
+    }
+  }
+  saveTabState(activeTabId);
+}
+
+function shareLink() {
+  const encoded = encodeStateToUrl();
+  const url = `${window.location.origin}${window.location.pathname}#s=${encoded}`;
+  history.replaceState(null, '', `#s=${encoded}`);
+  navigator.clipboard.writeText(url)
+    .then(() => showToast('Link copied to clipboard!'))
+    .catch(() => prompt('Copy this shareable link:', url));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Subgroup & year header sync
+// ─────────────────────────────────────────────────────────────────────────────
+function initializeSubgroups() {
+  document.querySelectorAll('#numeratorTable .inputSubgroup').forEach((input, row) => {
     updateSubgroup(row, input.value);
   });
 }
@@ -41,263 +251,488 @@ function initializeYearHeaders() {
 }
 
 function updateSubgroup(row, value) {
-  document.getElementById(`successSubgroup-${row}`).value = value;
-  document.getElementById(`denominatorSubgroup-${row}`).value = value;
-  document.getElementById(`ppgSubgroup-${row}`).value = value;
+  const ids = [`successSubgroup-${row}`, `denominatorSubgroup-${row}`, `ppgSubgroup-${row}`];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = value;
+  });
 }
 
 function updateYearHeaders(initialYear) {
-  const yearRegex = /^(\d{4})-(\d{2})$/;
-  const match = initialYear.trim().match(yearRegex);
-
-  if (!match) {
-    return;
-  }
-
-  const startYear = Number.parseInt(match[1], 10);
-  const endYear = Number.parseInt(match[2], 10);
-
-  for (let column = 0; column < COLUMN_COUNT; column += 1) {
-    const endSuffix = String((endYear + column) % 100).padStart(2, '0');
-    const yearHeader = `${startYear + column}-${endSuffix}`;
-
-    document.getElementById(`year-${column}`).value = yearHeader;
-    document.getElementById(`success-year-${column}`).value = yearHeader;
-    document.getElementById(`denominator-year-${column}`).value = yearHeader;
-    document.getElementById(`ppg-year-${column}`).value = yearHeader;
+  const match = initialYear.trim().match(/^(\d{4})-(\d{2})$/);
+  if (!match) return;
+  const startYear = parseInt(match[1], 10);
+  const endYear = parseInt(match[2], 10);
+  for (let col = 0; col < COLUMN_COUNT; col++) {
+    const suffix = String((endYear + col) % 100).padStart(2, '0');
+    const label = `${startYear + col}-${suffix}`;
+    [`year-${col}`, `success-year-${col}`, `denominator-year-${col}`, `ppg-year-${col}`].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = label;
+    });
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Core calculation
+// ─────────────────────────────────────────────────────────────────────────────
 function recalculateAll() {
   const grid = buildDataGrid();
-
   calculateSuccessRates(grid);
-  calculatePpgAnalysis(grid);
+  ppgResults = calculatePpgAnalysis(grid);
+  updateDiSummary(ppgResults);
+  updateChart(ppgResults);
 }
 
 function buildDataGrid() {
-  const grid = [];
-
-  for (let row = 0; row < ROW_COUNT; row += 1) {
-    const columnValues = [];
-
-    for (let column = 0; column < COLUMN_COUNT; column += 1) {
-      columnValues.push(readCell(row, column));
-    }
-
-    grid.push(columnValues);
-  }
-
-  return grid;
+  return Array.from({ length: ROW_COUNT }, (_, row) =>
+    Array.from({ length: COLUMN_COUNT }, (_, col) => readCell(row, col))
+  );
 }
 
-function readCell(row, column) {
-  const numeratorInput = document.getElementById(`inputNumerator-${row}-${column}`);
-  const denominatorInput = document.getElementById(`inputDenominator-${row}-${column}`);
-  const numeratorRaw = parseInputValue(numeratorInput.value);
-  const denominatorRaw = parseInputValue(denominatorInput.value);
-  const numerator = numeratorRaw ?? 0;
-  const denominator = denominatorRaw ?? 0;
-
+function readCell(row, col) {
+  const nEl = document.getElementById(`inputNumerator-${row}-${col}`);
+  const dEl = document.getElementById(`inputDenominator-${row}-${col}`);
+  const nRaw = parseInputValue(nEl.value);
+  const dRaw = parseInputValue(dEl.value);
+  const numerator = nRaw ?? 0;
+  const denominator = dRaw ?? 0;
   let invalidReason = '';
 
-  if (numeratorRaw !== null && numeratorRaw < 0) {
-    invalidReason = 'Outcome counts cannot be negative.';
-  } else if (denominatorRaw !== null && denominatorRaw < 0) {
-    invalidReason = 'Population counts cannot be negative.';
-  } else if (numeratorRaw !== null && !Number.isInteger(numeratorRaw)) {
-    invalidReason = 'Outcome counts must be whole numbers.';
-  } else if (denominatorRaw !== null && !Number.isInteger(denominatorRaw)) {
-    invalidReason = 'Population counts must be whole numbers.';
-  } else if (numeratorRaw !== null && denominatorRaw === null) {
-    invalidReason = 'Enter a total population count for this subgroup.';
-  } else if (denominator > 0 && numerator > denominator) {
-    invalidReason = 'Outcome counts cannot be greater than the subgroup total.';
-  } else if (denominator === 0 && numerator > 0) {
-    invalidReason = 'Outcome counts require a subgroup total greater than zero.';
-  }
+  if (nRaw !== null && nRaw < 0) invalidReason = 'Outcome counts cannot be negative.';
+  else if (dRaw !== null && dRaw < 0) invalidReason = 'Population counts cannot be negative.';
+  else if (nRaw !== null && !Number.isInteger(nRaw)) invalidReason = 'Outcome counts must be whole numbers.';
+  else if (dRaw !== null && !Number.isInteger(dRaw)) invalidReason = 'Population counts must be whole numbers.';
+  else if (nRaw !== null && dRaw === null) invalidReason = 'Enter a total population count.';
+  else if (denominator > 0 && numerator > denominator) invalidReason = 'Outcome counts cannot exceed subgroup total.';
+  else if (denominator === 0 && numerator > 0) invalidReason = 'Subgroup total must be greater than zero.';
 
-  syncInputState(numeratorInput, denominatorInput, invalidReason);
-
-  return {
-    row,
-    column,
-    numerator,
-    denominator,
-    hasPopulation: denominator > 0,
-    isInvalid: invalidReason !== '',
-    invalidReason
-  };
+  syncInputState(nEl, dEl, invalidReason);
+  return { row, col, numerator, denominator, hasPopulation: denominator > 0, isInvalid: invalidReason !== '', invalidReason };
 }
 
-function syncInputState(numeratorInput, denominatorInput, invalidReason) {
-  const isInvalid = invalidReason !== '';
+function syncInputState(nEl, dEl, invalidReason) {
+  [nEl, dEl].forEach(el => {
+    el.classList.toggle('input-error', invalidReason !== '');
+    if (invalidReason) el.title = invalidReason;
+    else el.removeAttribute('title');
+  });
+}
 
-  [numeratorInput, denominatorInput].forEach((input) => {
-    input.classList.toggle('input-error', isInvalid);
+// ─────────────────────────────────────────────────────────────────────────────
+// Success rates rendering
+// ─────────────────────────────────────────────────────────────────────────────
+function calculateSuccessRates(grid) {
+  for (let row = 0; row < ROW_COUNT; row++) {
+    for (let col = 0; col < COLUMN_COUNT; col++) {
+      const cell = grid[row][col];
+      const out = document.getElementById(`successRate-${row}-${col}`);
+      clearOutputCell(out);
+      if (cell.isInvalid) { renderInfoCell(out, 'Check counts', cell.invalidReason, 'status-invalid'); continue; }
+      if (!cell.hasPopulation) continue;
+      const rate = (cell.numerator / cell.denominator) * 100;
+      out.className = 'rate-cell';
+      out.innerHTML = `<div class="rate-value">${formatPercent(rate)}</div><div class="rate-meta">${cell.numerator} / ${cell.denominator}</div>`;
+    }
+  }
+}
 
-    if (isInvalid) {
-      input.title = invalidReason;
-    } else {
-      input.removeAttribute('title');
+// ─────────────────────────────────────────────────────────────────────────────
+// PPG-1 analysis rendering (with trend arrows)
+// ─────────────────────────────────────────────────────────────────────────────
+function calculatePpgAnalysis(grid) {
+  // results[col][row]
+  const results = Array.from({ length: COLUMN_COUNT }, () => Array(ROW_COUNT).fill(null));
+
+  for (let col = 0; col < COLUMN_COUNT; col++) {
+    const popCells = grid.map(r => r[col]).filter(c => !c.isInvalid && c.hasPopulation);
+    const totalN = popCells.reduce((s, c) => s + c.numerator, 0);
+    const totalD = popCells.reduce((s, c) => s + c.denominator, 0);
+
+    for (let row = 0; row < ROW_COUNT; row++) {
+      const cell = grid[row][col];
+      const out = document.getElementById(`ppg1Value-${row}-${col}`);
+      clearOutputCell(out);
+
+      if (cell.isInvalid) { renderInfoCell(out, 'Check counts', cell.invalidReason, 'status-invalid'); continue; }
+      if (!cell.hasPopulation) continue;
+
+      if (cell.denominator <= MINIMUM_REPORTABLE_N) {
+        renderInfoCell(out, 'Insufficient data', `n = ${cell.denominator}. CCCCO advises against estimating DI when n ≤ 10.`, 'status-muted');
+        results[col][row] = { label: 'Insufficient data', status: 'status-muted' };
+        continue;
+      }
+
+      const otherD = totalD - cell.denominator;
+      if (popCells.length < 2 || otherD <= 0) {
+        renderInfoCell(out, 'Need more data', 'Enter at least two populated subgroups to compare.', 'status-muted');
+        results[col][row] = { label: 'Need more data', status: 'status-muted' };
+        continue;
+      }
+
+      const otherN = totalN - cell.numerator;
+      const sgRate = cell.numerator / cell.denominator;
+      const otherRate = otherN / otherD;
+      const ppg1 = (sgRate - otherRate) * 100;
+      const moe = calcMOE(sgRate, cell.denominator);
+      const statusObj = getPpgStatus(ppg1, moe);
+      const studentsNeeded = ppg1 < 0 ? Math.round(Math.abs(ppg1 / 100) * cell.denominator) : null;
+
+      // Trend arrow vs previous year
+      const prev = col > 0 ? results[col - 1][row] : null;
+      let trendHtml = '';
+      if (prev && prev.ppg1 !== undefined) {
+        const delta = ppg1 - prev.ppg1;
+        if (Math.abs(delta) >= 0.5) {
+          trendHtml = delta > 0
+            ? `<span class="trend-up" title="Improving: +${delta.toFixed(1)}pp vs prior year">↑</span>`
+            : `<span class="trend-dn" title="Worsening: ${delta.toFixed(1)}pp vs prior year">↓</span>`;
+        } else {
+          trendHtml = `<span class="trend-flat" title="Stable vs prior year">→</span>`;
+        }
+      }
+
+      out.className = `analysis-cell ${statusObj.className}`;
+      out.innerHTML = `
+        <div class="ppg-value">${formatPercent(ppg1)}${trendHtml}</div>
+        <div class="ppg-meta">All other: ${formatPercent(otherRate * 100)}</div>
+        <div class="ppg-meta">Threshold E: ${formatPercent(moe)}</div>
+        <div class="ppg-meta">Close gap: ${studentsNeeded === null ? '—' : studentsNeeded}</div>
+        <span class="status-badge">${statusObj.label}</span>
+      `;
+
+      results[col][row] = { ppg1, moe, sgRate, otherRate, status: statusObj.className, label: statusObj.label };
+    }
+  }
+  return results;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DI Summary banner
+// ─────────────────────────────────────────────────────────────────────────────
+function updateDiSummary(results) {
+  const container = document.getElementById('diSummary');
+  if (!container) return;
+
+  const yearLabels = Array.from({ length: COLUMN_COUNT }, (_, i) =>
+    document.getElementById(`year-${i}`)?.value || `Year ${i + 1}`
+  );
+
+  const cols = [];
+  for (let col = 0; col < COLUMN_COUNT; col++) {
+    const flagged = [], total = [];
+    for (let row = 0; row < ROW_COUNT; row++) {
+      const r = results[col][row];
+      if (!r) continue;
+      const sg = document.getElementById(`inputSubgroup-${row}`)?.value;
+      if (!sg) continue;
+      total.push(sg);
+      if (r.status === 'status-di') flagged.push(sg);
+    }
+    if (total.length > 0) cols.push({ year: yearLabels[col], flagged, total: total.length });
+  }
+
+  if (cols.length === 0) { container.innerHTML = ''; return; }
+
+  const recent = cols[cols.length - 1];
+  const anyFlagged = cols.some(c => c.flagged.length > 0);
+
+  let html = `<div class="di-summary-inner">`;
+  html += `<div class="di-summary-headline">`;
+  if (recent.flagged.length === 0) {
+    html += `<span class="di-badge di-badge-ok">✓ No DI flagged in ${recent.year}</span>`;
+  } else {
+    html += `<span class="di-badge di-badge-alert">⚠ ${recent.flagged.length} of ${recent.total} subgroup${recent.flagged.length !== 1 ? 's' : ''} DI-flagged in ${recent.year}</span>`;
+  }
+  html += `</div>`;
+
+  if (anyFlagged) {
+    html += `<div class="di-summary-detail">`;
+    cols.forEach(c => {
+      if (c.flagged.length === 0) return;
+      html += `<div class="di-year-row"><strong>${c.year}:</strong> ${c.flagged.join(', ')}</div>`;
+    });
+    html += `</div>`;
+  }
+  html += `</div>`;
+  container.innerHTML = html;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Chart (Chart.js horizontal bar)
+// ─────────────────────────────────────────────────────────────────────────────
+const zeroLinePlugin = {
+  id: 'zeroLine',
+  afterDraw(chart) {
+    const { ctx, chartArea: { top, bottom }, scales: { x } } = chart;
+    if (!x) return;
+    const xPos = x.getPixelForValue(0);
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(xPos, top);
+    ctx.lineTo(xPos, bottom);
+    ctx.strokeStyle = 'rgba(20,50,74,0.45)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
+    ctx.stroke();
+    ctx.restore();
+  }
+};
+
+function initChart() {
+  const canvas = document.getElementById('ppg1Chart');
+  if (!canvas || typeof Chart === 'undefined') return;
+  Chart.register(zeroLinePlugin);
+  ppg1Chart = new Chart(canvas, {
+    type: 'bar',
+    data: { labels: [], datasets: [] },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: ctx => ` PPG-1: ${ctx.parsed.x.toFixed(1)}%` }
+        }
+      },
+      scales: {
+        x: {
+          title: { display: true, text: 'PPG-1 (percentage points)', font: { size: 12 } },
+          grid: { color: '#e0e7ef' },
+          ticks: { callback: v => `${v}%` },
+        },
+        y: { grid: { display: false }, ticks: { font: { size: 12 } } }
+      }
     }
   });
 }
 
-function calculateSuccessRates(grid) {
-  for (let row = 0; row < ROW_COUNT; row += 1) {
-    for (let column = 0; column < COLUMN_COUNT; column += 1) {
-      const cell = grid[row][column];
-      const outputCell = document.getElementById(`successRate-${row}-${column}`);
+function updateChart(results) {
+  const chartCard = document.getElementById('chartCard');
+  if (!ppg1Chart) return;
 
-      clearOutputCell(outputCell);
+  // Find most recent col with numeric PPG-1 data
+  let bestCol = -1;
+  for (let col = COLUMN_COUNT - 1; col >= 0; col--) {
+    if (results[col].some(r => r && r.ppg1 !== undefined)) { bestCol = col; break; }
+  }
 
-      if (cell.isInvalid) {
-        renderInfoCell(outputCell, 'Check counts', cell.invalidReason, 'status-invalid');
-        continue;
-      }
+  if (bestCol === -1) {
+    if (chartCard) chartCard.style.display = 'none';
+    ppg1Chart.data.labels = [];
+    ppg1Chart.data.datasets = [];
+    ppg1Chart.update();
+    return;
+  }
 
-      if (!cell.hasPopulation) {
-        continue;
-      }
+  const yearLabel = document.getElementById(`year-${bestCol}`)?.value || `Year ${bestCol + 1}`;
+  const labels = [], vals = [], colors = [];
 
-      const successRate = (cell.numerator / cell.denominator) * 100;
+  for (let row = 0; row < ROW_COUNT; row++) {
+    const r = results[bestCol][row];
+    if (!r || r.ppg1 === undefined) continue;
+    const sg = document.getElementById(`inputSubgroup-${row}`)?.value;
+    if (!sg) continue;
+    labels.push(sg);
+    vals.push(parseFloat(r.ppg1.toFixed(1)));
+    colors.push(
+      r.status === 'status-di'    ? '#d4473b' :
+      r.status === 'status-watch' ? '#c8930a' :
+      r.status === 'status-high'  ? '#2d7a4f' : '#4a82a6'
+    );
+  }
 
-      outputCell.className = 'rate-cell';
-      outputCell.style.backgroundColor = getRateColor(successRate);
-      outputCell.innerHTML = `
-        <div class="rate-value">${formatPercent(successRate)}</div>
-        <div class="rate-meta">${cell.numerator} / ${cell.denominator}</div>
-      `;
+  const titleEl = document.getElementById('chartTitle');
+  if (titleEl) titleEl.textContent = `PPG-1 by Subgroup — ${yearLabel}`;
+
+  // Adjust canvas height based on number of bars
+  const height = Math.max(180, labels.length * 38 + 60);
+  const canvas = document.getElementById('ppg1Chart');
+  if (canvas) canvas.style.height = `${height}px`;
+
+  ppg1Chart.data.labels = labels;
+  ppg1Chart.data.datasets = [{ data: vals, backgroundColor: colors, borderRadius: 4, barThickness: 22 }];
+  ppg1Chart.update();
+  if (chartCard) chartCard.style.display = '';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Import modal
+// ─────────────────────────────────────────────────────────────────────────────
+function openImportModal() {
+  document.getElementById('importOverlay').classList.remove('hidden');
+  document.getElementById('importNumerator').value = '';
+  document.getElementById('importDenominator').value = '';
+}
+
+function closeImportModal() {
+  document.getElementById('importOverlay').classList.add('hidden');
+}
+
+function applyImport() {
+  const numText = document.getElementById('importNumerator').value.trim();
+  const denText = document.getElementById('importDenominator').value.trim();
+  if (!numText && !denText) { showToast('Paste some data first.'); return; }
+
+  if (numText) applyPastedData(parsePaste(numText), 'inputNumerator', 'inputSubgroup');
+  if (denText) applyPastedData(parsePaste(denText), 'inputDenominator', null);
+
+  initializeSubgroups();
+  initializeYearHeaders();
+  saveTabState(activeTabId);
+  recalculateAll();
+  closeImportModal();
+  showToast('Data imported!');
+}
+
+function parsePaste(text) {
+  const rows = text.split('\n').map(l => l.trim()).filter(Boolean).map(line =>
+    (line.includes('\t') ? line.split('\t') : line.split(',')).map(c => c.trim())
+  );
+  // Skip header row if all data columns are non-numeric
+  if (rows.length > 1 && rows[0].slice(1).every(v => v === '' || isNaN(Number(v.replace(/,/g,''))))) {
+    return rows.slice(1);
+  }
+  return rows;
+}
+
+function applyPastedData(rows, valuePrefix, subgroupPrefix) {
+  rows.forEach((cells, rowIdx) => {
+    if (rowIdx >= ROW_COUNT) return;
+    if (subgroupPrefix) {
+      const el = document.getElementById(`${subgroupPrefix}-${rowIdx}`);
+      if (el) el.value = cells[0] || '';
     }
-  }
+    cells.slice(1).forEach((val, colIdx) => {
+      if (colIdx >= COLUMN_COUNT) return;
+      const el = document.getElementById(`${valuePrefix}-${rowIdx}-${colIdx}`);
+      if (el) el.value = val.replace(/,/g, '').trim();
+    });
+  });
 }
 
-function calculatePpgAnalysis(grid) {
-  for (let column = 0; column < COLUMN_COUNT; column += 1) {
-    const populationCells = [];
+// ─────────────────────────────────────────────────────────────────────────────
+// CSV Export
+// ─────────────────────────────────────────────────────────────────────────────
+function exportCSV() {
+  const years = Array.from({ length: COLUMN_COUNT }, (_, i) =>
+    document.getElementById(`year-${i}`)?.value || `Year ${i + 1}`
+  );
+  const tab = TABS.find(t => t.id === activeTabId);
 
-    for (let row = 0; row < ROW_COUNT; row += 1) {
-      const cell = grid[row][column];
+  const headerRow = ['Subgroup',
+    ...years.flatMap(y => [`${y} Successes`, `${y} Total`, `${y} Rate`, `${y} PPG-1`, `${y} Trend`, `${y} Status`])
+  ];
+  const dataRows = [];
 
-      if (!cell.isInvalid && cell.hasPopulation) {
-        populationCells.push(cell);
+  for (let row = 0; row < ROW_COUNT; row++) {
+    const sg = document.getElementById(`inputSubgroup-${row}`)?.value || '';
+    if (!sg) continue;
+    const cols = [];
+    for (let col = 0; col < COLUMN_COUNT; col++) {
+      const n = document.getElementById(`inputNumerator-${row}-${col}`)?.value || '';
+      const d = document.getElementById(`inputDenominator-${row}-${col}`)?.value || '';
+      const r = ppgResults[col]?.[row];
+      const nv = parseFloat(n), dv = parseFloat(d);
+      const rate = (n && d && dv > 0) ? (nv / dv * 100).toFixed(1) + '%' : '';
+      const ppg1Str = r?.ppg1 !== undefined ? r.ppg1.toFixed(1) + '%' : (r?.label || '');
+      // Trend
+      let trend = '';
+      if (col > 0 && r?.ppg1 !== undefined) {
+        const prev = ppgResults[col - 1]?.[row];
+        if (prev?.ppg1 !== undefined) {
+          const d2 = r.ppg1 - prev.ppg1;
+          trend = Math.abs(d2) < 0.5 ? 'Stable' : d2 > 0 ? 'Improving' : 'Worsening';
+        }
       }
+      cols.push(n, d, rate, ppg1Str, trend, r?.label || '');
     }
+    dataRows.push([sg, ...cols]);
+  }
 
-    const totalNumerator = populationCells.reduce((sum, cell) => sum + cell.numerator, 0);
-    const totalDenominator = populationCells.reduce((sum, cell) => sum + cell.denominator, 0);
+  const csv = [headerRow, ...dataRows]
+    .map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(','))
+    .join('\n');
 
-    for (let row = 0; row < ROW_COUNT; row += 1) {
-      const cell = grid[row][column];
-      const outputCell = document.getElementById(`ppg1Value-${row}-${column}`);
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `PPG1-${(tab?.label || 'results').replace(/\s+/g,'-')}-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV downloaded!');
+}
 
-      clearOutputCell(outputCell);
+// ─────────────────────────────────────────────────────────────────────────────
+// Clear all data for current tab
+// ─────────────────────────────────────────────────────────────────────────────
+function clearAll() {
+  if (!confirm('Clear all data for this tab?')) return;
+  const tab = TABS.find(t => t.id === activeTabId);
+  const defaults = tab?.defaultSubgroups || [];
 
-      if (cell.isInvalid) {
-        renderInfoCell(outputCell, 'Check counts', cell.invalidReason, 'status-invalid');
-        continue;
-      }
-
-      if (!cell.hasPopulation) {
-        continue;
-      }
-
-      if (cell.denominator <= MINIMUM_REPORTABLE_N) {
-        renderInfoCell(
-          outputCell,
-          'Insufficient data',
-          `n = ${cell.denominator}. The CCCCO methodology advises against estimating DI when n \u2264 10.`,
-          'status-muted'
-        );
-        continue;
-      }
-
-      const allOtherDenominator = totalDenominator - cell.denominator;
-      const allOtherNumerator = totalNumerator - cell.numerator;
-
-      if (populationCells.length < 2 || allOtherDenominator <= 0) {
-        renderInfoCell(
-          outputCell,
-          'Need more data',
-          'Enter at least two populated subgroups in this year to compare the target group against all other students.',
-          'status-muted'
-        );
-        continue;
-      }
-
-      const subgroupRate = cell.numerator / cell.denominator;
-      const allOtherRate = allOtherNumerator / allOtherDenominator;
-      const ppg1 = (subgroupRate - allOtherRate) * 100;
-      const marginOfError = calculateMarginOfError(subgroupRate, cell.denominator);
-      const studentsNeeded = ppg1 < 0 ? Math.round((Math.abs(ppg1) / 100) * cell.denominator) : null;
-      const status = getPpgStatus(ppg1, marginOfError);
-
-      outputCell.className = `analysis-cell ${status.className}`;
-      outputCell.innerHTML = `
-        <div class="ppg-value">${formatPercent(ppg1)}</div>
-        <div class="ppg-meta">All other: ${formatPercent(allOtherRate * 100)}</div>
-        <div class="ppg-meta">Threshold E: ${formatPercent(marginOfError)}</div>
-        <div class="ppg-meta">Close gap: ${studentsNeeded === null ? '--' : studentsNeeded}</div>
-        <span class="status-badge">${status.label}</span>
-      `;
+  for (let row = 0; row < ROW_COUNT; row++) {
+    const sgEl = document.getElementById(`inputSubgroup-${row}`);
+    if (sgEl) sgEl.value = defaults[row] || '';
+    for (let col = 0; col < COLUMN_COUNT; col++) {
+      const nEl = document.getElementById(`inputNumerator-${row}-${col}`);
+      const dEl = document.getElementById(`inputDenominator-${row}-${col}`);
+      if (nEl) nEl.value = '';
+      if (dEl) dEl.value = '';
+      localStorage.removeItem(storageKey(activeTabId, `inputNumerator-${row}-${col}`));
+      localStorage.removeItem(storageKey(activeTabId, `inputDenominator-${row}-${col}`));
     }
+    localStorage.removeItem(storageKey(activeTabId, `inputSubgroup-${row}`));
   }
+  history.replaceState(null, '', window.location.pathname);
+  initializeSubgroups();
+  initializeYearHeaders();
+  recalculateAll();
+  showToast('Data cleared.');
 }
 
-function calculateMarginOfError(subgroupRate, denominator) {
-  const calculatedMargin = Z_SCORE_95 * Math.sqrt((subgroupRate * (1 - subgroupRate)) / denominator) * 100;
-
-  return Math.max(calculatedMargin, MIN_MARGIN_OF_ERROR);
+// ─────────────────────────────────────────────────────────────────────────────
+// Toast
+// ─────────────────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  if (!toast) return;
+  toast.textContent = msg;
+  toast.classList.add('toast-show');
+  setTimeout(() => toast.classList.remove('toast-show'), 2600);
 }
 
-function getPpgStatus(ppg1, marginOfError) {
-  if (ppg1 <= -marginOfError) {
-    return { label: 'DI flagged', className: 'status-di' };
-  }
-
-  if (ppg1 < 0) {
-    return { label: 'Below peers', className: 'status-watch' };
-  }
-
-  if (ppg1 >= marginOfError) {
-    return { label: 'Higher than peers', className: 'status-high' };
-  }
-
-  return { label: 'Within threshold', className: 'status-good' };
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared helpers
+// ─────────────────────────────────────────────────────────────────────────────
+function calcMOE(rate, n) {
+  return Math.max(Z_SCORE_95 * Math.sqrt((rate * (1 - rate)) / n) * 100, MIN_MARGIN_OF_ERROR);
 }
 
-function renderInfoCell(outputCell, title, detail, className) {
-  outputCell.className = `analysis-cell ${className}`;
-  outputCell.innerHTML = `
-    <div class="ppg-value">${title}</div>
-    <div class="ppg-note">${detail}</div>
-    <span class="status-badge">${title}</span>
-  `;
+function getPpgStatus(ppg1, moe) {
+  if (ppg1 <= -moe) return { label: 'DI flagged',       className: 'status-di' };
+  if (ppg1 < 0)     return { label: 'Below peers',      className: 'status-watch' };
+  if (ppg1 >= moe)  return { label: 'Higher than peers',className: 'status-high' };
+  return               { label: 'Within threshold', className: 'status-good' };
 }
 
-function clearOutputCell(outputCell) {
-  outputCell.className = '';
-  outputCell.style.backgroundColor = '';
-  outputCell.innerHTML = '';
+function renderInfoCell(el, title, detail, cls) {
+  el.className = `analysis-cell ${cls}`;
+  el.innerHTML = `<div class="ppg-value">${title}</div><div class="ppg-note">${detail}</div><span class="status-badge">${title}</span>`;
 }
 
-function parseInputValue(rawValue) {
-  if (rawValue.trim() === '') {
-    return null;
-  }
-
-  const parsedValue = Number(rawValue);
-  return Number.isFinite(parsedValue) ? parsedValue : null;
+function clearOutputCell(el) {
+  el.className = '';
+  el.style.backgroundColor = '';
+  el.innerHTML = '';
 }
 
-function formatPercent(value) {
-  return `${value.toFixed(1)}%`;
+function parseInputValue(raw) {
+  if (raw.trim() === '') return null;
+  const v = Number(raw);
+  return Number.isFinite(v) ? v : null;
 }
 
-function getRateColor(rate) {
-  const boundedRate = Math.min(Math.max(rate, 0), 100);
-  const hue = (boundedRate / 100) * 120;
-
-  return `hsl(${hue} 48% 89%)`;
-}
+function formatPercent(v) { return `${v.toFixed(1)}%`; }

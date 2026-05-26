@@ -9,6 +9,8 @@
 
 <body>
   <main class="page-shell">
+
+    <!-- ── Hero ─────────────────────────────────────────────────────────── -->
     <section class="hero">
       <div class="hero-copy">
         <p class="eyebrow">Orange Coast College</p>
@@ -26,25 +28,24 @@
       </div>
     </section>
 
+    <!-- ── Methodology toggle ────────────────────────────────────────────── -->
     <details class="info-details">
       <summary class="info-summary">Methodology &amp; Resources <span class="info-chevron">▸</span></summary>
       <section class="info-grid">
         <article class="info-card">
           <h2>How DI Is Flagged</h2>
-          <p><code>PPG-1 = subgroup rate - all other rate</code></p>
-          <p>For positive outcomes, disproportionate impact is flagged when <code>PPG-1 &le; -E</code>.</p>
-          <p><code>E = max(1.96 &times; sqrt(p&#770;(1-p&#770;)/n), 2.0%)</code></p>
+          <p><code>PPG-1 = subgroup rate − all other rate</code></p>
+          <p>For positive outcomes, disproportionate impact is flagged when <code>PPG-1 ≤ −E</code>.</p>
+          <p><code>E = max(1.96 × sqrt(p̂(1−p̂)/n), 2.0%)</code></p>
         </article>
-
         <article class="info-card">
           <h2>Quick Notes</h2>
           <ul class="note-list">
-            <li>Groups with <code>n &le; 10</code> are marked as insufficient data.</li>
+            <li>Groups with <code>n ≤ 10</code> are marked as insufficient data.</li>
             <li>Each analysis cell shows the all-other rate, margin of error, and gap-closing estimate.</li>
-            <li>Counts must follow <code>successes &le; total count</code>.</li>
+            <li>Counts must follow <code>successes ≤ total count</code>.</li>
           </ul>
         </article>
-
         <article class="info-card">
           <h2>Official Resources</h2>
           <div class="resource-links">
@@ -52,7 +53,6 @@
             <a href="https://www.cccco.edu/About-Us/Chancellors-Office/Divisions/Research-Analytics-Data/data-resources" target="_blank" rel="noreferrer">CCCCO Data Resources</a>
           </div>
         </article>
-
         <article class="info-card">
           <h2>Data Sources</h2>
           <div class="resource-links">
@@ -64,330 +64,177 @@
       </section>
     </details>
 
-  <div class="table-container">
-    <div class="table-wrapper wrapper-outcome">
-      <h2>Outcome Counts</h2>
-      <h4>Enter the number of students in each subgroup who achieved the outcome you are measuring.</h4>
-      <table id="numeratorTable">
-        <tr>
-          <th>Race/Ethnicity</th>
-          <th><input type="text" class="yearHeader" id="year-0" value="2020-21"></th>
-          <th><input type="text" class="yearHeader" id="year-1" value="2021-22" readonly></th>
-          <th><input type="text" class="yearHeader" id="year-2" value="2022-23" readonly></th>
-          <th><input type="text" class="yearHeader" id="year-3" value="2023-24" readonly></th>
-        </tr>
-        <tr>
-          <td><input type="text" class="inputSubgroup" id="inputSubgroup-0" value="Am Ind/Ntv Alsk"></td>
-          <td><input type="number" class="inputNumerator" id="inputNumerator-0-0"></td>
-          <td><input type="number" class="inputNumerator" id="inputNumerator-0-1"></td>
-          <td><input type="number" class="inputNumerator" id="inputNumerator-0-2"></td>
-          <td><input type="number" class="inputNumerator" id="inputNumerator-0-3"></td>
-        </tr>
-        <tr>
-            <td><input type="text" class="inputSubgroup" id="inputSubgroup-1" value="Asian"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-1-0"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-1-1"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-1-2"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-1-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="inputSubgroup-2" value="Black"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-2-0"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-2-1"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-2-2"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-2-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="inputSubgroup-3" value="Hispanic/Latinx"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-3-0"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-3-1"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-3-2"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-3-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="inputSubgroup-4" value="More than one"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-4-0"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-4-1"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-4-2"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-4-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="inputSubgroup-5" value="Unknown"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-5-0"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-5-1"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-5-2"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-5-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="inputSubgroup-6" value="White"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-6-0"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-6-1"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-6-2"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-6-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="inputSubgroup-7" value=""></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-7-0"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-7-1"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-7-2"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-7-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="inputSubgroup-8" value=""></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-8-0"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-8-1"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-8-2"></td>
-            <td><input type="number" class="inputNumerator" id="inputNumerator-8-3"></td>
-          </tr>
-
-        <!-- Repeat for each row and column, ensuring unique IDs -->
-      </table>
-    </div>
-    <div class="table-wrapper wrapper-success">
-      <h2>Subgroup Success Rates</h2>
-      <h4>Each cell shows the subgroup rate and the raw count used to calculate it.</h4>
-      <table id="successRatesTable">
-        <tr>
-          <th>Race/Ethnicity</th>
-          <th><input type="text" class="yearHeader" id="success-year-0" readonly></th>
-          <th><input type="text" class="yearHeader" id="success-year-1" readonly></th>
-          <th><input type="text" class="yearHeader" id="success-year-2" readonly></th>
-          <th><input type="text" class="yearHeader" id="success-year-3" readonly></th>
-        </tr>
-        <tr>
-          <td><input type="text" class="inputSubgroup" id="successSubgroup-0" readonly></td>
-          <td id="successRate-0-0"></td>
-          <td id="successRate-0-1"></td>
-          <td id="successRate-0-2"></td>
-          <td id="successRate-0-3"></td>
-        </tr>
-        <tr>
-            <td><input type="text" class="inputSubgroup" id="successSubgroup-1" readonly></td>
-            <td id="successRate-1-0"></td>
-            <td id="successRate-1-1"></td>
-            <td id="successRate-1-2"></td>
-            <td id="successRate-1-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="successSubgroup-2" readonly></td>
-            <td id="successRate-2-0"></td>
-            <td id="successRate-2-1"></td>
-            <td id="successRate-2-2"></td>
-            <td id="successRate-2-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="successSubgroup-3" readonly></td>
-            <td id="successRate-3-0"></td>
-            <td id="successRate-3-1"></td>
-            <td id="successRate-3-2"></td>
-            <td id="successRate-3-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="successSubgroup-4" readonly></td>
-            <td id="successRate-4-0"></td>
-            <td id="successRate-4-1"></td>
-            <td id="successRate-4-2"></td>
-            <td id="successRate-4-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="successSubgroup-5" readonly></td>
-            <td id="successRate-5-0"></td>
-            <td id="successRate-5-1"></td>
-            <td id="successRate-5-2"></td>
-            <td id="successRate-5-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="successSubgroup-6" readonly></td>
-            <td id="successRate-6-0"></td>
-            <td id="successRate-6-1"></td>
-            <td id="successRate-6-2"></td>
-            <td id="successRate-6-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="successSubgroup-7" readonly></td>
-            <td id="successRate-7-0"></td>
-            <td id="successRate-7-1"></td>
-            <td id="successRate-7-2"></td>
-            <td id="successRate-7-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="successSubgroup-8" readonly></td>
-            <td id="successRate-8-0"></td>
-            <td id="successRate-8-1"></td>
-            <td id="successRate-8-2"></td>
-            <td id="successRate-8-3"></td>
-          </tr>
-
-      </table>
-    </div>
-    <div class="table-wrapper wrapper-total">
-      <h2>Total Count</h2>
-      <h4>Enter the total subgroup population used as the denominator for the selected outcome.</h4>
-      <table id="denominatorTable">
-        <tr>
-          <th>Race/Ethnicity</th>
-          <th><input type="text" class="yearHeader" id="denominator-year-0" readonly></th>
-          <th><input type="text" class="yearHeader" id="denominator-year-1" readonly></th>
-          <th><input type="text" class="yearHeader" id="denominator-year-2" readonly></th>
-          <th><input type="text" class="yearHeader" id="denominator-year-3" readonly></th>
-        </tr>
-        <tr>
-          <td><input type="text" class="inputSubgroup" id="denominatorSubgroup-0"></td>
-          <td><input type="number" class="inputDenominator" id="inputDenominator-0-0"></td>
-          <td><input type="number" class="inputDenominator" id="inputDenominator-0-1"></td>
-          <td><input type="number" class="inputDenominator" id="inputDenominator-0-2"></td>
-          <td><input type="number" class="inputDenominator" id="inputDenominator-0-3"></td>
-        </tr>
-        <tr>
-            <td><input type="text" class="inputSubgroup" id="denominatorSubgroup-1"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-1-0"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-1-1"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-1-2"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-1-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="denominatorSubgroup-2"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-2-0"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-2-1"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-2-2"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-2-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="denominatorSubgroup-3"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-3-0"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-3-1"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-3-2"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-3-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="denominatorSubgroup-4"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-4-0"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-4-1"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-4-2"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-4-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="denominatorSubgroup-5"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-5-0"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-5-1"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-5-2"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-5-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="denominatorSubgroup-6"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-6-0"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-6-1"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-6-2"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-6-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="denominatorSubgroup-7"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-7-0"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-7-1"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-7-2"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-7-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="denominatorSubgroup-8"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-8-0"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-8-1"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-8-2"></td>
-            <td><input type="number" class="inputDenominator" id="inputDenominator-8-3"></td>
-          </tr>
-  
-      </table>
-    </div>
-    <div class="table-wrapper wrapper-ppg1">
-      <h2>PPG-1 DI Analysis</h2>
-      <h4>Each cell shows the PPG-1 value, the all-other comparison rate, the margin of error threshold, and the DI decision.</h4>
-      <div class="legend-row">
-        <span class="legend-pill legend-di">DI flagged</span>
-        <span class="legend-pill legend-watch">Below peers</span>
-        <span class="legend-pill legend-good">Within threshold or higher than peers</span>
-        <span class="legend-pill legend-muted">Insufficient data</span>
+    <!-- ── Toolbar: tabs + action buttons ───────────────────────────────── -->
+    <div class="toolbar">
+      <nav id="tabBar" class="tab-bar" role="tablist" aria-label="Demographic category"></nav>
+      <div class="action-bar">
+        <button id="btnImport" class="action-btn" title="Paste data from Excel">📥 Import</button>
+        <button id="btnExport" class="action-btn" title="Download results as CSV">📤 Export CSV</button>
+        <button id="btnShare"  class="action-btn" title="Copy shareable link">🔗 Share</button>
+        <button id="btnPrint"  class="action-btn" title="Print this page">🖨 Print</button>
+        <button id="btnClear"  class="action-btn action-btn-danger" title="Clear all data for this tab">🗑 Clear</button>
       </div>
-      <table id="ppg1ValuesTable">
-        <tr>
-          <th>Race/Ethnicity</th>
-          <th><input type="text" class="yearHeader" id="ppg-year-0" readonly></th>
-          <th><input type="text" class="yearHeader" id="ppg-year-1" readonly></th>
-          <th><input type="text" class="yearHeader" id="ppg-year-2" readonly></th>
-          <th><input type="text" class="yearHeader" id="ppg-year-3" readonly></th>
-        </tr>
-        <tr>
-          <td><input type="text" class="inputSubgroup" id="ppgSubgroup-0" readonly></td>
-          <td id="ppg1Value-0-0"></td>
-          <td id="ppg1Value-0-1"></td>
-          <td id="ppg1Value-0-2"></td>
-          <td id="ppg1Value-0-3"></td>
-        </tr>
-        <tr>
-            <td><input type="text" class="inputSubgroup" id="ppgSubgroup-1" readonly></td>
-            <td id="ppg1Value-1-0"></td>
-            <td id="ppg1Value-1-1"></td>
-            <td id="ppg1Value-1-2"></td>
-            <td id="ppg1Value-1-3"></td>
-          </tr>
+    </div>
+
+    <!-- ── Input + output tables ─────────────────────────────────────────── -->
+    <div class="table-container">
+
+      <!-- Outcome Counts -->
+      <div class="table-wrapper wrapper-outcome">
+        <h2>Outcome Counts</h2>
+        <h4>Enter the number of students in each subgroup who achieved the outcome you are measuring.</h4>
+        <table id="numeratorTable">
           <tr>
-            <td><input type="text" class="inputSubgroup" id="ppgSubgroup-2" readonly></td>
-            <td id="ppg1Value-2-0"></td>
-            <td id="ppg1Value-2-1"></td>
-            <td id="ppg1Value-2-2"></td>
-            <td id="ppg1Value-2-3"></td>
+            <th>Race/Ethnicity</th>
+            <th><input type="text" class="yearHeader" id="year-0" value="2020-21"></th>
+            <th><input type="text" class="yearHeader" id="year-1" value="2021-22" readonly></th>
+            <th><input type="text" class="yearHeader" id="year-2" value="2022-23" readonly></th>
+            <th><input type="text" class="yearHeader" id="year-3" value="2023-24" readonly></th>
           </tr>
+          <tr><td><input type="text" class="inputSubgroup" id="inputSubgroup-0" value="Am Ind/Ntv Alsk"></td><td><input type="number" class="inputNumerator" id="inputNumerator-0-0"></td><td><input type="number" class="inputNumerator" id="inputNumerator-0-1"></td><td><input type="number" class="inputNumerator" id="inputNumerator-0-2"></td><td><input type="number" class="inputNumerator" id="inputNumerator-0-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="inputSubgroup-1" value="Asian"></td><td><input type="number" class="inputNumerator" id="inputNumerator-1-0"></td><td><input type="number" class="inputNumerator" id="inputNumerator-1-1"></td><td><input type="number" class="inputNumerator" id="inputNumerator-1-2"></td><td><input type="number" class="inputNumerator" id="inputNumerator-1-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="inputSubgroup-2" value="Black"></td><td><input type="number" class="inputNumerator" id="inputNumerator-2-0"></td><td><input type="number" class="inputNumerator" id="inputNumerator-2-1"></td><td><input type="number" class="inputNumerator" id="inputNumerator-2-2"></td><td><input type="number" class="inputNumerator" id="inputNumerator-2-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="inputSubgroup-3" value="Hispanic/Latinx"></td><td><input type="number" class="inputNumerator" id="inputNumerator-3-0"></td><td><input type="number" class="inputNumerator" id="inputNumerator-3-1"></td><td><input type="number" class="inputNumerator" id="inputNumerator-3-2"></td><td><input type="number" class="inputNumerator" id="inputNumerator-3-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="inputSubgroup-4" value="More than one"></td><td><input type="number" class="inputNumerator" id="inputNumerator-4-0"></td><td><input type="number" class="inputNumerator" id="inputNumerator-4-1"></td><td><input type="number" class="inputNumerator" id="inputNumerator-4-2"></td><td><input type="number" class="inputNumerator" id="inputNumerator-4-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="inputSubgroup-5" value="Unknown"></td><td><input type="number" class="inputNumerator" id="inputNumerator-5-0"></td><td><input type="number" class="inputNumerator" id="inputNumerator-5-1"></td><td><input type="number" class="inputNumerator" id="inputNumerator-5-2"></td><td><input type="number" class="inputNumerator" id="inputNumerator-5-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="inputSubgroup-6" value="White"></td><td><input type="number" class="inputNumerator" id="inputNumerator-6-0"></td><td><input type="number" class="inputNumerator" id="inputNumerator-6-1"></td><td><input type="number" class="inputNumerator" id="inputNumerator-6-2"></td><td><input type="number" class="inputNumerator" id="inputNumerator-6-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="inputSubgroup-7" value=""></td><td><input type="number" class="inputNumerator" id="inputNumerator-7-0"></td><td><input type="number" class="inputNumerator" id="inputNumerator-7-1"></td><td><input type="number" class="inputNumerator" id="inputNumerator-7-2"></td><td><input type="number" class="inputNumerator" id="inputNumerator-7-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="inputSubgroup-8" value=""></td><td><input type="number" class="inputNumerator" id="inputNumerator-8-0"></td><td><input type="number" class="inputNumerator" id="inputNumerator-8-1"></td><td><input type="number" class="inputNumerator" id="inputNumerator-8-2"></td><td><input type="number" class="inputNumerator" id="inputNumerator-8-3"></td></tr>
+        </table>
+      </div>
+
+      <!-- Total Count -->
+      <div class="table-wrapper wrapper-total">
+        <h2>Total Count</h2>
+        <h4>Enter the total subgroup population used as the denominator for the selected outcome.</h4>
+        <table id="denominatorTable">
           <tr>
-            <td><input type="text" class="inputSubgroup" id="ppgSubgroup-3" readonly></td>
-            <td id="ppg1Value-3-0"></td>
-            <td id="ppg1Value-3-1"></td>
-            <td id="ppg1Value-3-2"></td>
-            <td id="ppg1Value-3-3"></td>
+            <th>Race/Ethnicity</th>
+            <th><input type="text" class="yearHeader" id="denominator-year-0" readonly></th>
+            <th><input type="text" class="yearHeader" id="denominator-year-1" readonly></th>
+            <th><input type="text" class="yearHeader" id="denominator-year-2" readonly></th>
+            <th><input type="text" class="yearHeader" id="denominator-year-3" readonly></th>
           </tr>
+          <tr><td><input type="text" class="inputSubgroup" id="denominatorSubgroup-0"></td><td><input type="number" class="inputDenominator" id="inputDenominator-0-0"></td><td><input type="number" class="inputDenominator" id="inputDenominator-0-1"></td><td><input type="number" class="inputDenominator" id="inputDenominator-0-2"></td><td><input type="number" class="inputDenominator" id="inputDenominator-0-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="denominatorSubgroup-1"></td><td><input type="number" class="inputDenominator" id="inputDenominator-1-0"></td><td><input type="number" class="inputDenominator" id="inputDenominator-1-1"></td><td><input type="number" class="inputDenominator" id="inputDenominator-1-2"></td><td><input type="number" class="inputDenominator" id="inputDenominator-1-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="denominatorSubgroup-2"></td><td><input type="number" class="inputDenominator" id="inputDenominator-2-0"></td><td><input type="number" class="inputDenominator" id="inputDenominator-2-1"></td><td><input type="number" class="inputDenominator" id="inputDenominator-2-2"></td><td><input type="number" class="inputDenominator" id="inputDenominator-2-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="denominatorSubgroup-3"></td><td><input type="number" class="inputDenominator" id="inputDenominator-3-0"></td><td><input type="number" class="inputDenominator" id="inputDenominator-3-1"></td><td><input type="number" class="inputDenominator" id="inputDenominator-3-2"></td><td><input type="number" class="inputDenominator" id="inputDenominator-3-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="denominatorSubgroup-4"></td><td><input type="number" class="inputDenominator" id="inputDenominator-4-0"></td><td><input type="number" class="inputDenominator" id="inputDenominator-4-1"></td><td><input type="number" class="inputDenominator" id="inputDenominator-4-2"></td><td><input type="number" class="inputDenominator" id="inputDenominator-4-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="denominatorSubgroup-5"></td><td><input type="number" class="inputDenominator" id="inputDenominator-5-0"></td><td><input type="number" class="inputDenominator" id="inputDenominator-5-1"></td><td><input type="number" class="inputDenominator" id="inputDenominator-5-2"></td><td><input type="number" class="inputDenominator" id="inputDenominator-5-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="denominatorSubgroup-6"></td><td><input type="number" class="inputDenominator" id="inputDenominator-6-0"></td><td><input type="number" class="inputDenominator" id="inputDenominator-6-1"></td><td><input type="number" class="inputDenominator" id="inputDenominator-6-2"></td><td><input type="number" class="inputDenominator" id="inputDenominator-6-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="denominatorSubgroup-7"></td><td><input type="number" class="inputDenominator" id="inputDenominator-7-0"></td><td><input type="number" class="inputDenominator" id="inputDenominator-7-1"></td><td><input type="number" class="inputDenominator" id="inputDenominator-7-2"></td><td><input type="number" class="inputDenominator" id="inputDenominator-7-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="denominatorSubgroup-8"></td><td><input type="number" class="inputDenominator" id="inputDenominator-8-0"></td><td><input type="number" class="inputDenominator" id="inputDenominator-8-1"></td><td><input type="number" class="inputDenominator" id="inputDenominator-8-2"></td><td><input type="number" class="inputDenominator" id="inputDenominator-8-3"></td></tr>
+        </table>
+      </div>
+
+      <!-- Subgroup Success Rates -->
+      <div class="table-wrapper wrapper-success">
+        <h2>Subgroup Success Rates</h2>
+        <h4>Each cell shows the subgroup rate and the raw count used to calculate it.</h4>
+        <table id="successRatesTable">
           <tr>
-            <td><input type="text" class="inputSubgroup" id="ppgSubgroup-4" readonly></td>
-            <td id="ppg1Value-4-0"></td>
-            <td id="ppg1Value-4-1"></td>
-            <td id="ppg1Value-4-2"></td>
-            <td id="ppg1Value-4-3"></td>
+            <th>Race/Ethnicity</th>
+            <th><input type="text" class="yearHeader" id="success-year-0" readonly></th>
+            <th><input type="text" class="yearHeader" id="success-year-1" readonly></th>
+            <th><input type="text" class="yearHeader" id="success-year-2" readonly></th>
+            <th><input type="text" class="yearHeader" id="success-year-3" readonly></th>
           </tr>
+          <tr><td><input type="text" class="inputSubgroup" id="successSubgroup-0" readonly></td><td id="successRate-0-0"></td><td id="successRate-0-1"></td><td id="successRate-0-2"></td><td id="successRate-0-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="successSubgroup-1" readonly></td><td id="successRate-1-0"></td><td id="successRate-1-1"></td><td id="successRate-1-2"></td><td id="successRate-1-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="successSubgroup-2" readonly></td><td id="successRate-2-0"></td><td id="successRate-2-1"></td><td id="successRate-2-2"></td><td id="successRate-2-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="successSubgroup-3" readonly></td><td id="successRate-3-0"></td><td id="successRate-3-1"></td><td id="successRate-3-2"></td><td id="successRate-3-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="successSubgroup-4" readonly></td><td id="successRate-4-0"></td><td id="successRate-4-1"></td><td id="successRate-4-2"></td><td id="successRate-4-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="successSubgroup-5" readonly></td><td id="successRate-5-0"></td><td id="successRate-5-1"></td><td id="successRate-5-2"></td><td id="successRate-5-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="successSubgroup-6" readonly></td><td id="successRate-6-0"></td><td id="successRate-6-1"></td><td id="successRate-6-2"></td><td id="successRate-6-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="successSubgroup-7" readonly></td><td id="successRate-7-0"></td><td id="successRate-7-1"></td><td id="successRate-7-2"></td><td id="successRate-7-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="successSubgroup-8" readonly></td><td id="successRate-8-0"></td><td id="successRate-8-1"></td><td id="successRate-8-2"></td><td id="successRate-8-3"></td></tr>
+        </table>
+      </div>
+
+      <!-- PPG-1 DI Analysis -->
+      <div class="table-wrapper wrapper-ppg1">
+        <h2>PPG-1 DI Analysis</h2>
+        <h4>Each cell shows the PPG-1 value, the all-other comparison rate, the margin of error threshold, and the DI decision.</h4>
+        <div class="legend-row">
+          <span class="legend-pill legend-di">DI flagged</span>
+          <span class="legend-pill legend-watch">Below peers</span>
+          <span class="legend-pill legend-good">Within threshold or higher</span>
+          <span class="legend-pill legend-muted">Insufficient data</span>
+        </div>
+        <table id="ppg1ValuesTable">
           <tr>
-            <td><input type="text" class="inputSubgroup" id="ppgSubgroup-5" readonly></td>
-            <td id="ppg1Value-5-0"></td>
-            <td id="ppg1Value-5-1"></td>
-            <td id="ppg1Value-5-2"></td>
-            <td id="ppg1Value-5-3"></td>
+            <th>Race/Ethnicity</th>
+            <th><input type="text" class="yearHeader" id="ppg-year-0" readonly></th>
+            <th><input type="text" class="yearHeader" id="ppg-year-1" readonly></th>
+            <th><input type="text" class="yearHeader" id="ppg-year-2" readonly></th>
+            <th><input type="text" class="yearHeader" id="ppg-year-3" readonly></th>
           </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="ppgSubgroup-6" readonly></td>
-            <td id="ppg1Value-6-0"></td>
-            <td id="ppg1Value-6-1"></td>
-            <td id="ppg1Value-6-2"></td>
-            <td id="ppg1Value-6-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="ppgSubgroup-7" readonly></td>
-            <td id="ppg1Value-7-0"></td>
-            <td id="ppg1Value-7-1"></td>
-            <td id="ppg1Value-7-2"></td>
-            <td id="ppg1Value-7-3"></td>
-          </tr>
-          <tr>
-            <td><input type="text" class="inputSubgroup" id="ppgSubgroup-8" readonly></td>
-            <td id="ppg1Value-8-0"></td>
-            <td id="ppg1Value-8-1"></td>
-            <td id="ppg1Value-8-2"></td>
-            <td id="ppg1Value-8-3"></td>
-          </tr>
-       </table>
+          <tr><td><input type="text" class="inputSubgroup" id="ppgSubgroup-0" readonly></td><td id="ppg1Value-0-0"></td><td id="ppg1Value-0-1"></td><td id="ppg1Value-0-2"></td><td id="ppg1Value-0-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="ppgSubgroup-1" readonly></td><td id="ppg1Value-1-0"></td><td id="ppg1Value-1-1"></td><td id="ppg1Value-1-2"></td><td id="ppg1Value-1-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="ppgSubgroup-2" readonly></td><td id="ppg1Value-2-0"></td><td id="ppg1Value-2-1"></td><td id="ppg1Value-2-2"></td><td id="ppg1Value-2-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="ppgSubgroup-3" readonly></td><td id="ppg1Value-3-0"></td><td id="ppg1Value-3-1"></td><td id="ppg1Value-3-2"></td><td id="ppg1Value-3-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="ppgSubgroup-4" readonly></td><td id="ppg1Value-4-0"></td><td id="ppg1Value-4-1"></td><td id="ppg1Value-4-2"></td><td id="ppg1Value-4-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="ppgSubgroup-5" readonly></td><td id="ppg1Value-5-0"></td><td id="ppg1Value-5-1"></td><td id="ppg1Value-5-2"></td><td id="ppg1Value-5-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="ppgSubgroup-6" readonly></td><td id="ppg1Value-6-0"></td><td id="ppg1Value-6-1"></td><td id="ppg1Value-6-2"></td><td id="ppg1Value-6-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="ppgSubgroup-7" readonly></td><td id="ppg1Value-7-0"></td><td id="ppg1Value-7-1"></td><td id="ppg1Value-7-2"></td><td id="ppg1Value-7-3"></td></tr>
+          <tr><td><input type="text" class="inputSubgroup" id="ppgSubgroup-8" readonly></td><td id="ppg1Value-8-0"></td><td id="ppg1Value-8-1"></td><td id="ppg1Value-8-2"></td><td id="ppg1Value-8-3"></td></tr>
+        </table>
+      </div>
+
+    </div><!-- /.table-container -->
+
+    <!-- ── DI Summary banner ─────────────────────────────────────────────── -->
+    <div id="diSummary"></div>
+
+    <!-- ── PPG-1 Chart ───────────────────────────────────────────────────── -->
+    <div class="chart-card" id="chartCard" style="display:none">
+      <h2 id="chartTitle">PPG-1 by Subgroup</h2>
+      <p class="chart-subtitle">Bars show the most recent year with data. Red = DI flagged, yellow = below peers, blue = within/above threshold.</p>
+      <div class="chart-container">
+        <canvas id="ppg1Chart"></canvas>
+      </div>
+    </div>
+
+    <p class="footnote">
+      Based on the California Community Colleges Chancellor's Office 2022 PPG-1 methodology for
+      positive outcomes. A negative gap is flagged only when the observed PPG-1 is at or below the
+      subgroup margin of error threshold.
+    </p>
+
+  </main>
+
+  <!-- ── Import modal ──────────────────────────────────────────────────── -->
+  <div id="importOverlay" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="importHeading">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="importHeading">Import Data from Excel</h2>
+        <button id="importClose" class="modal-close" aria-label="Close">✕</button>
+      </div>
+      <p class="modal-hint">
+        Copy a table from Excel or Google Sheets and paste below. First column = subgroup name,
+        remaining columns = one value per academic year (left to right). You can include or omit a header row — it will be detected automatically.
+      </p>
+      <div class="modal-fields">
+        <div class="modal-field">
+          <label for="importNumerator"><strong>Outcome Counts</strong> (number of successes)</label>
+          <textarea id="importNumerator" rows="6" placeholder="Am Ind/Ntv Alsk&#9;45&#9;38&#9;52&#9;41&#10;Asian&#9;230&#9;245&#9;260&#9;271&#10;Black&#9;88&#9;95&#9;101&#9;97"></textarea>
+        </div>
+        <div class="modal-field">
+          <label for="importDenominator"><strong>Total Count</strong> (total in subgroup)</label>
+          <textarea id="importDenominator" rows="6" placeholder="Am Ind/Ntv Alsk&#9;80&#9;75&#9;90&#9;85&#10;Asian&#9;350&#9;370&#9;380&#9;395&#10;Black&#9;140&#9;155&#9;160&#9;152"></textarea>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="importApply" class="btn-primary">Apply Import</button>
+        <button id="importCancel" class="btn-secondary">Cancel</button>
+      </div>
     </div>
   </div>
 
-  <p class="footnote">
-    Based on the California Community Colleges Chancellor's Office 2022 PPG-1 methodology for
-    positive outcomes. A negative gap is flagged only when the observed PPG-1 is at or below the
-    subgroup margin of error threshold.
-  </p>
+  <!-- ── Toast notification ────────────────────────────────────────────── -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  </main>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
