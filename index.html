@@ -220,24 +220,37 @@
       <!-- ── Mode: Raw student data ── -->
       <div id="importModeRaw">
         <p class="modal-hint">
-          Copy all rows from your Excel student-level export (including the header row) and paste below.
-          The tool will auto-detect columns and aggregate <strong>Race/Ethnicity, Gender, and Age</strong> tabs all at once.
+          Upload or paste your student-level export. Columns are auto-detected and
+          <strong>Race/Ethnicity, Gender, and Age</strong> tabs are populated at once.
         </p>
-        <div class="modal-field">
-          <label for="importRawPaste"><strong>Paste raw data here</strong></label>
-          <textarea id="importRawPaste" rows="7" placeholder="AcademicYear&#9;Gender&#9;RaceEthnicityAncestry&#9;AgeGroup&#9;Success&#9;Enrolled at Census&#10;2023&#9;F&#9;Asian&#9;20 to 24&#9;1&#9;1&#10;2023&#9;M&#9;Hispanic&#9;19 or less&#9;0&#9;1"></textarea>
+
+        <!-- File drop zone -->
+        <div id="rawDropZone" class="drop-zone">
+          <label for="rawFileInput" class="drop-inner">
+            <span class="drop-icon">📂</span>
+            <span class="drop-text"><strong>Click to upload</strong> or drag &amp; drop</span>
+            <span class="drop-hint">.csv &nbsp;·&nbsp; .xlsx &nbsp;·&nbsp; .xls</span>
+          </label>
+          <input type="file" id="rawFileInput" accept=".csv,.xlsx,.xls" class="sr-only">
+          <div id="rawFileStatus" class="file-status hidden"></div>
         </div>
 
-        <!-- Column mapping (shown after paste is detected) -->
+        <div class="import-or"><span>or paste below</span></div>
+
+        <div class="modal-field">
+          <textarea id="importRawPaste" rows="5" placeholder="AcademicYear&#9;Gender&#9;RaceEthnicityAncestry&#9;AgeGroup&#9;Success&#9;Enrolled at Census&#10;2023&#9;F&#9;Asian&#9;20 to 24&#9;1&#9;1&#10;2023&#9;M&#9;Hispanic&#9;19 or less&#9;0&#9;1"></textarea>
+        </div>
+
+        <!-- Column mapping (shown after detection) -->
         <div id="rawColumnMap" class="column-map hidden">
-          <p class="map-label">Map columns — we auto-detected these, adjust if needed:</p>
+          <p class="map-label">Columns auto-detected — adjust if needed:</p>
           <div class="map-grid">
-            <label>Year column<select id="mapYear"></select></label>
-            <label>Race/Ethnicity column<select id="mapRace"></select></label>
-            <label>Gender column<select id="mapGender"></select></label>
-            <label>Age column<select id="mapAge"></select></label>
-            <label>Success column<select id="mapSuccess"></select></label>
-            <label>Enrolled/Total column<select id="mapTotal"></select></label>
+            <label>Year<select id="mapYear"></select></label>
+            <label>Race/Ethnicity<select id="mapRace"></select></label>
+            <label>Gender<select id="mapGender"></select></label>
+            <label>Age<select id="mapAge"></select></label>
+            <label>Success<select id="mapSuccess"></select></label>
+            <label>Enrolled/Total<select id="mapTotal"></select></label>
           </div>
           <div id="rawPreview" class="raw-preview"></div>
         </div>

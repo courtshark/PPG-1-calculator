@@ -25,6 +25,7 @@
    Reset & base
 ───────────────────────────────────────────────────────────────────────────── */
 * { box-sizing: border-box; }
+.hidden { display: none !important; }
 
 body {
   margin: 0;
@@ -444,6 +445,54 @@ td input:focus { outline: 2px solid rgba(242,107,42,.3); border-color: var(--ora
   color: var(--muted);
   margin-bottom: 1rem;
   line-height: 1.55;
+}
+
+/* ── File drop zone ── */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0;
+  margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+.drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  padding: 1.25rem 1rem;
+  text-align: center;
+  background: #fafcff;
+  transition: border-color .15s, background .15s;
+  cursor: pointer;
+}
+.drop-zone:hover, .drop-zone.dragover {
+  border-color: var(--navy);
+  background: #edf2fb;
+}
+.drop-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .2rem;
+  cursor: pointer;
+}
+.drop-icon  { font-size: 2rem; line-height: 1; margin-bottom: .1rem; }
+.drop-text  { font-size: .88rem; color: var(--text); }
+.drop-text strong { color: var(--navy); }
+.drop-hint  { font-size: .75rem; color: var(--muted); }
+.file-status {
+  margin-top: .55rem;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--success-text);
+}
+/* "or paste below" divider */
+.import-or {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  margin: .85rem 0 .5rem;
+  color: var(--muted);
+  font-size: .78rem;
+}
+.import-or::before, .import-or::after {
+  content: ''; flex: 1; border-top: 1px solid var(--border);
 }
 
 .modal-fields { display: grid; gap: .85rem; margin-bottom: 1rem; }

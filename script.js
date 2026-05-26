@@ -197,6 +197,23 @@ function setupActionButtons() {
   document.getElementById('importRawPaste').addEventListener('paste', () => {
     setTimeout(detectRawColumns, 100);
   });
+
+  // File upload — click or drag-and-drop
+  const fileInput = document.getElementById('rawFileInput');
+  fileInput.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (file) handleFileUpload(file);
+  });
+
+  const dropZone = document.getElementById('rawDropZone');
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', e => { if (!dropZone.contains(e.relatedTarget)) dropZone.classList.remove('dragover'); });
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file) handleFileUpload(file);
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -627,19 +644,76 @@ function parseRaw(text) {
     .map(line => (line.includes('\t') ? line.split('\t') : line.split(',')).map(c => c.trim()));
 }
 
-function detectRawColumns() {
-  const text = document.getElementById('importRawPaste').value.trim();
-  if (!text) { showToast('Paste some data first.'); return; }
+// ── File upload handling ──────────────────────────────────────────────────────
 
-  const rows = parseRaw(text);
-  if (rows.length < 2) { showToast('Need at least a header row and one data row.'); return; }
+function handleFileUpload(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  const status = document.getElementById('rawFileStatus');
+  status.textContent = '⏳ Loading…';
+  status.classList.remove('hidden');
 
-  rawHeader = rows[0];
-  rawParsedRows = rows.slice(1);
+  if (ext === 'csv') {
+    const reader = new FileReader();
+    reader.onload  = e => loadRawRows(parseRaw(e.target.result), file.name);
+    reader.onerror = () => showToast('Failed to read file.');
+    reader.readAsText(file);
 
+  } else if (ext === 'xlsx' || ext === 'xls') {
+    const doRead = () => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' })
+            .map(r => r.map(c => (c === null || c === undefined ? '' : String(c)).trim()));
+          loadRawRows(rows, file.name);
+        } catch {
+          showToast('Could not parse Excel file — try saving as .csv first.');
+          status.classList.add('hidden');
+        }
+      };
+      reader.onerror = () => showToast('Failed to read file.');
+      reader.readAsArrayBuffer(file);
+    };
+
+    if (typeof XLSX === 'undefined') {
+      // Lazy-load SheetJS only when first Excel file is selected
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.20.3/dist/xlsx.full.min.js';
+      script.onload  = doRead;
+      script.onerror = () => {
+        showToast('Could not load Excel parser — try saving as .csv first.');
+        status.classList.add('hidden');
+      };
+      document.head.appendChild(script);
+    } else {
+      doRead();
+    }
+  } else {
+    showToast('Please upload a .csv, .xlsx, or .xls file.');
+    status.classList.add('hidden');
+  }
+}
+
+function loadRawRows(allRows, fileName) {
+  const dataRows = allRows.filter(r => r.some(c => c !== ''));
+  if (dataRows.length < 2) { showToast('File appears empty.'); return; }
+  rawHeader    = dataRows[0];
+  rawParsedRows = dataRows.slice(1);
+
+  const status = document.getElementById('rawFileStatus');
+  status.textContent = `✓ ${fileName}  —  ${rawParsedRows.length} rows × ${rawHeader.length} columns`;
+  status.classList.remove('hidden');
+
+  triggerColumnDetection();
+}
+
+// ── Column detection UI ───────────────────────────────────────────────────────
+
+function triggerColumnDetection() {
   const detected = autoDetectColumns(rawHeader);
 
-  // Build select options
   ['mapYear','mapRace','mapGender','mapAge','mapSuccess','mapTotal'].forEach((selectId, i) => {
     const sel = document.getElementById(selectId);
     const keyMap = ['year','race','gender','age','success','total'];
@@ -653,6 +727,21 @@ function detectRawColumns() {
   document.getElementById('rawColumnMap').classList.remove('hidden');
   buildRawPreview(detected);
   document.getElementById('importRawApply').disabled = false;
+}
+
+function detectRawColumns() {
+  const text = document.getElementById('importRawPaste').value.trim();
+  if (!text && !rawParsedRows.length) { showToast('Upload a file or paste some data first.'); return; }
+
+  if (text) {
+    const rows = parseRaw(text);
+    if (rows.length < 2) { showToast('Need at least a header row and one data row.'); return; }
+    rawHeader     = rows[0];
+    rawParsedRows = rows.slice(1);
+    document.getElementById('rawFileStatus').classList.add('hidden');
+  }
+
+  triggerColumnDetection();
 }
 
 function buildRawPreview(detected) {
@@ -778,8 +867,14 @@ function openImportModal() {
   document.getElementById('importNumerator').value = '';
   document.getElementById('importDenominator').value = '';
   document.getElementById('importRawPaste').value = '';
+  document.getElementById('rawFileInput').value = '';
+  document.getElementById('rawFileStatus').classList.add('hidden');
+  document.getElementById('rawDropZone').classList.remove('dragover');
   document.getElementById('rawColumnMap').classList.add('hidden');
+  document.getElementById('rawPreview').innerHTML = '';
   document.getElementById('importRawApply').disabled = true;
+  rawHeader = [];
+  rawParsedRows = [];
   // Always open on Raw tab
   document.querySelectorAll('.import-tab').forEach(b => b.classList.remove('active'));
   document.querySelector('.import-tab[data-mode="raw"]').classList.add('active');
