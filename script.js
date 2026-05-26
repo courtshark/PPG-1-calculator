@@ -860,7 +860,13 @@ function reAggregate() {
     : storedRawRows;
 
   const effectiveSuccessCol = storedOutcomes[activeOutcomeIdx]?.col ?? storedRawColMap.successCol;
-  const colMap = { ...storedRawColMap, successCol: effectiveSuccessCol };
+
+  // totalCol is ALWAYS the enrollment column — pinned, never changes with outcome
+  const colMap = {
+    ...storedRawColMap,
+    successCol: effectiveSuccessCol,
+    totalCol:   storedRawColMap.totalCol,   // explicit — enrollment denominator is fixed
+  };
 
   populateTabsFromRows(rows, colMap);
   loadTabState(activeTabId);
