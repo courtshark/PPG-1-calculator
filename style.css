@@ -284,7 +284,7 @@ code {
 
 table {
   width: 100%;
-  min-width: 620px;
+  table-layout: fixed;
   border-collapse: collapse;
   background: var(--cream);
 }
@@ -292,9 +292,10 @@ table {
 th,
 td {
   border: 1px solid var(--border);
-  padding: 0.45rem;
+  padding: 0.3rem;
   text-align: left;
   vertical-align: top;
+  overflow: hidden;
 }
 
 th {
@@ -304,18 +305,22 @@ th {
 
 th:first-child,
 td:first-child {
-  min-width: 165px;
+  width: 26%;
 }
 
+th input,
 td input {
   width: 100%;
-  min-height: 2.35rem;
+  min-width: 0;
+  min-height: 1.8rem;
   border: 1px solid #d4dee7;
-  border-radius: 10px;
+  border-radius: 8px;
   background: #ffffff;
   color: var(--text);
-  padding: 0.45rem 0.55rem;
+  padding: 0.22rem 0.3rem;
   font: inherit;
+  font-size: 0.88em;
+  box-sizing: border-box;
 }
 
 td input[readonly] {
