@@ -76,6 +76,9 @@
       </div>
     </div>
 
+    <!-- ── Course filter bar (shown after raw import with a course column) ── -->
+    <div id="courseFilterBar" class="course-filter-bar hidden"></div>
+
     <!-- ── Input + output tables ─────────────────────────────────────────── -->
     <div class="table-container">
 
@@ -251,6 +254,7 @@
             <label>Age<select id="mapAge"></select></label>
             <label>Success<select id="mapSuccess"></select></label>
             <label>Enrolled/Total<select id="mapTotal"></select></label>
+            <label>Course/Section <span class="map-optional">(optional — enables course filter)</span><select id="mapCourse"></select></label>
           </div>
           <div id="rawPreview" class="raw-preview"></div>
         </div>
