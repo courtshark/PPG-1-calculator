@@ -26,40 +26,43 @@
       </div>
     </section>
 
-    <section class="info-grid">
-      <article class="info-card">
-        <h2>How DI Is Flagged</h2>
-        <p><code>PPG-1 = subgroup rate - all other rate</code></p>
-        <p>For positive outcomes, disproportionate impact is flagged when <code>PPG-1 &le; -E</code>.</p>
-        <p><code>E = max(1.96 &times; sqrt(p&#770;(1-p&#770;)/n), 2.0%)</code></p>
-      </article>
+    <details class="info-details">
+      <summary class="info-summary">Methodology &amp; Resources <span class="info-chevron">▸</span></summary>
+      <section class="info-grid">
+        <article class="info-card">
+          <h2>How DI Is Flagged</h2>
+          <p><code>PPG-1 = subgroup rate - all other rate</code></p>
+          <p>For positive outcomes, disproportionate impact is flagged when <code>PPG-1 &le; -E</code>.</p>
+          <p><code>E = max(1.96 &times; sqrt(p&#770;(1-p&#770;)/n), 2.0%)</code></p>
+        </article>
 
-      <article class="info-card">
-        <h2>Quick Notes</h2>
-        <ul class="note-list">
-          <li>Groups with <code>n &le; 10</code> are marked as insufficient data.</li>
-          <li>Each analysis cell shows the all-other rate, margin of error, and gap-closing estimate.</li>
-          <li>Counts must follow <code>successes &le; total count</code>.</li>
-        </ul>
-      </article>
+        <article class="info-card">
+          <h2>Quick Notes</h2>
+          <ul class="note-list">
+            <li>Groups with <code>n &le; 10</code> are marked as insufficient data.</li>
+            <li>Each analysis cell shows the all-other rate, margin of error, and gap-closing estimate.</li>
+            <li>Counts must follow <code>successes &le; total count</code>.</li>
+          </ul>
+        </article>
 
-      <article class="info-card">
-        <h2>Official Resources</h2>
-        <div class="resource-links">
-          <a href="https://www.cccco.edu/-/media/CCCCO-Website/docs/data-resources/ccccopercentagepointgapminusoneppg1methodologynotes2022accessible20220414a11y.pdf" target="_blank" rel="noreferrer">CCCCO PPG-1 Methodology Notes</a>
-          <a href="https://www.cccco.edu/About-Us/Chancellors-Office/Divisions/Research-Analytics-Data/data-resources" target="_blank" rel="noreferrer">CCCCO Data Resources</a>
-        </div>
-      </article>
-    </section>
+        <article class="info-card">
+          <h2>Official Resources</h2>
+          <div class="resource-links">
+            <a href="https://www.cccco.edu/-/media/CCCCO-Website/docs/data-resources/ccccopercentagepointgapminusoneppg1methodologynotes2022accessible20220414a11y.pdf" target="_blank" rel="noreferrer">CCCCO PPG-1 Methodology Notes</a>
+            <a href="https://www.cccco.edu/About-Us/Chancellors-Office/Divisions/Research-Analytics-Data/data-resources" target="_blank" rel="noreferrer">CCCCO Data Resources</a>
+          </div>
+        </article>
 
-    <section class="info-card data-card">
-      <h2>Data Sources</h2>
-      <div class="resource-links">
-        <a href="https://app.powerbi.com/view?r=eyJrIjoiZGVlMTYwNjAtYjg0MS00ZGJhLTkyNjMtZjk5ZDIzMGMwZjYzIiwidCI6ImVlNTdmNTU1LTFkNzAtNGE4Yi04ZWRhLWMwZjQwNzFhNDQ1OCIsImMiOjZ9" target="_blank" rel="noreferrer">Course Success and Retention Rate</a>
-        <a href="https://app.powerbi.com/view?r=eyJrIjoiNDZkNWY5MzgtMjc3NC00YWVkLWEyMjUtODFmMzc3Mzg5NDkyIiwidCI6ImVlNTdmNTU1LTFkNzAtNGE4Yi04ZWRhLWMwZjQwNzFhNDQ1OCIsImMiOjZ9" target="_blank" rel="noreferrer">Student Persistence</a>
-        <a href="https://app.powerbi.com/view?r=eyJrIjoiMDU3YjYwYTItZDA4Mi00ZDJmLTgyMTgtYzk2NzNhYzA1YjczIiwidCI6ImVlNTdmNTU1LTFkNzAtNGE4Yi04ZWRhLWMwZjQwNzFhNDQ1OCIsImMiOjZ9" target="_blank" rel="noreferrer">Enrollments</a>
-      </div>
-    </section>
+        <article class="info-card">
+          <h2>Data Sources</h2>
+          <div class="resource-links">
+            <a href="https://app.powerbi.com/view?r=eyJrIjoiZGVlMTYwNjAtYjg0MS00ZGJhLTkyNjMtZjk5ZDIzMGMwZjYzIiwidCI6ImVlNTdmNTU1LTFkNzAtNGE4Yi04ZWRhLWMwZjQwNzFhNDQ1OCIsImMiOjZ9" target="_blank" rel="noreferrer">Course Success and Retention Rate</a>
+            <a href="https://app.powerbi.com/view?r=eyJrIjoiNDZkNWY5MzgtMjc3NC00YWVkLWEyMjUtODFmMzc3Mzg5NDkyIiwidCI6ImVlNTdmNTU1LTFkNzAtNGE4Yi04ZWRhLWMwZjQwNzFhNDQ1OCIsImMiOjZ9" target="_blank" rel="noreferrer">Student Persistence</a>
+            <a href="https://app.powerbi.com/view?r=eyJrIjoiMDU3YjYwYTItZDA4Mi00ZDJmLTgyMTgtYzk2NzNhYzA1YjczIiwidCI6ImVlNTdmNTU1LTFkNzAtNGE4Yi04ZWRhLWMwZjQwNzFhNDQ1OCIsImMiOjZ9" target="_blank" rel="noreferrer">Enrollments</a>
+          </div>
+        </article>
+      </section>
+    </details>
 
   <div class="table-container">
     <div class="table-wrapper">
