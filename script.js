@@ -167,11 +167,35 @@ function setupActionButtons() {
   document.getElementById('btnPrint').addEventListener('click', () => window.print());
   document.getElementById('btnClear').addEventListener('click', clearAll);
 
+  // Modal close buttons
   document.getElementById('importClose').addEventListener('click', closeImportModal);
   document.getElementById('importCancel').addEventListener('click', closeImportModal);
-  document.getElementById('importApply').addEventListener('click', applyImport);
+  document.getElementById('importRawCancel').addEventListener('click', closeImportModal);
   document.getElementById('importOverlay').addEventListener('click', e => {
     if (e.target === document.getElementById('importOverlay')) closeImportModal();
+  });
+
+  // Pre-aggregated import
+  document.getElementById('importApply').addEventListener('click', applyImport);
+
+  // Raw import
+  document.getElementById('importDetect').addEventListener('click', detectRawColumns);
+  document.getElementById('importRawApply').addEventListener('click', applyRawImport);
+
+  // Import mode tabs
+  document.querySelectorAll('.import-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.import-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const mode = btn.dataset.mode;
+      document.getElementById('importModeRaw').classList.toggle('hidden', mode !== 'raw');
+      document.getElementById('importModeAgg').classList.toggle('hidden', mode !== 'agg');
+    });
+  });
+
+  // Auto-detect on paste into raw textarea
+  document.getElementById('importRawPaste').addEventListener('paste', () => {
+    setTimeout(detectRawColumns, 100);
   });
 }
 
@@ -558,12 +582,209 @@ function updateChart(results) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Raw data import — smart aggregation from student-level exports
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Known gender code → label mapping
+const GENDER_LABELS = { M: 'Men', F: 'Women', N: 'Non-binary/Other', B: 'Non-binary/Other' };
+
+// Convert a numeric academic year (e.g. 2022) to "2022-23" display format
+function fmtAcademicYear(year) {
+  const y = parseInt(year, 10);
+  if (isNaN(y)) return String(year);
+  return `${y}-${String((y + 1) % 100).padStart(2, '0')}`;
+}
+
+// Heuristic column auto-detection from header array
+function autoDetectColumns(header) {
+  const h = header.map(c => c.toLowerCase().replace(/[\s_]/g, ''));
+  // Term-priority: try each term across ALL columns before moving to the next term.
+  // This ensures 'census' finds 'enrolledatcensus' before 'enrolled' finds 'crossenrolled'.
+  const find = (...terms) => {
+    for (const t of terms) {
+      const idx = h.findIndex(c => c.includes(t));
+      if (idx >= 0) return idx;
+    }
+    return -1;
+  };
+  return {
+    year:    find('academicyear', 'year', 'yr'),
+    race:    find('race', 'ethnicity', 'ancestry'),
+    gender:  find('gender', 'sex'),
+    age:     find('agegroup', 'age'),
+    success: find('success', 'successful', 'complete', 'pass'),
+    total:   find('census', 'headcount', 'enrolled', 'total', 'count'),
+  };
+}
+
+let rawParsedRows = [];
+let rawHeader = [];
+
+function parseRaw(text) {
+  // Always keep header row (raw import needs it for column detection)
+  return text.split('\n')
+    .map(l => l.trim()).filter(Boolean)
+    .map(line => (line.includes('\t') ? line.split('\t') : line.split(',')).map(c => c.trim()));
+}
+
+function detectRawColumns() {
+  const text = document.getElementById('importRawPaste').value.trim();
+  if (!text) { showToast('Paste some data first.'); return; }
+
+  const rows = parseRaw(text);
+  if (rows.length < 2) { showToast('Need at least a header row and one data row.'); return; }
+
+  rawHeader = rows[0];
+  rawParsedRows = rows.slice(1);
+
+  const detected = autoDetectColumns(rawHeader);
+
+  // Build select options
+  ['mapYear','mapRace','mapGender','mapAge','mapSuccess','mapTotal'].forEach((selectId, i) => {
+    const sel = document.getElementById(selectId);
+    const keyMap = ['year','race','gender','age','success','total'];
+    const detectedIdx = detected[keyMap[i]];
+    sel.innerHTML = '<option value="-1">— not used —</option>' +
+      rawHeader.map((col, idx) =>
+        `<option value="${idx}"${idx === detectedIdx ? ' selected' : ''}>${col}</option>`
+      ).join('');
+  });
+
+  document.getElementById('rawColumnMap').classList.remove('hidden');
+  buildRawPreview(detected);
+  document.getElementById('importRawApply').disabled = false;
+}
+
+function buildRawPreview(detected) {
+  const yearCol    = parseInt(document.getElementById('mapYear').value);
+  const raceCol    = parseInt(document.getElementById('mapRace').value);
+  const successCol = parseInt(document.getElementById('mapSuccess').value);
+  const totalCol   = parseInt(document.getElementById('mapTotal').value);
+
+  if (yearCol < 0 || raceCol < 0 || successCol < 0) {
+    document.getElementById('rawPreview').innerHTML = '';
+    return;
+  }
+
+  const agg = aggregateRaw(rawParsedRows, yearCol, raceCol, successCol, totalCol);
+  const years = Object.keys(agg).sort();
+  const subgroups = [...new Set(years.flatMap(y => Object.keys(agg[y])))].sort();
+
+  let html = `<p class="preview-label">Preview — Race/Ethnicity aggregation (${subgroups.length} subgroups × ${years.length} years):</p>`;
+  html += `<div class="preview-scroll"><table class="preview-table"><tr><th>Subgroup</th>${years.map(y => `<th>${fmtAcademicYear(y)}<br><small>S / T</small></th>`).join('')}</tr>`;
+  subgroups.forEach(sg => {
+    html += `<tr><td>${sg}</td>${years.map(y => {
+      const c = agg[y][sg];
+      return c ? `<td>${c.s} / ${c.t}</td>` : '<td>—</td>';
+    }).join('')}</tr>`;
+  });
+  html += '</table></div>';
+  document.getElementById('rawPreview').innerHTML = html;
+}
+
+function aggregateRaw(rows, yearCol, sgCol, successCol, totalCol, labelMap = null) {
+  // Returns { year: { subgroup: { s, t } } }
+  // Apply labelMap during aggregation so codes like M→Men, N+B→Non-binary/Other merge correctly
+  const result = {};
+  rows.forEach(row => {
+    const year = row[yearCol]?.trim();
+    let sg     = row[sgCol]?.trim();
+    if (!year || !sg) return;
+    if (labelMap) sg = labelMap[sg] || sg;  // Normalize label (e.g. 'N' and 'B' → 'Non-binary/Other')
+    const s = parseFloat(row[successCol]) || 0;
+    const t = totalCol >= 0 ? (parseFloat(row[totalCol]) || 1) : 1;
+    if (!result[year]) result[year] = {};
+    if (!result[year][sg]) result[year][sg] = { s: 0, t: 0 };
+    result[year][sg].s += s;
+    result[year][sg].t += t;
+  });
+  return result;
+}
+
+function applyRawImport() {
+  const yearCol    = parseInt(document.getElementById('mapYear').value);
+  const raceCol    = parseInt(document.getElementById('mapRace').value);
+  const genderCol  = parseInt(document.getElementById('mapGender').value);
+  const ageCol     = parseInt(document.getElementById('mapAge').value);
+  const successCol = parseInt(document.getElementById('mapSuccess').value);
+  const totalCol   = parseInt(document.getElementById('mapTotal').value);
+
+  let tabsPopulated = [];
+
+  if (raceCol >= 0) {
+    const agg = aggregateRaw(rawParsedRows, yearCol, raceCol, successCol, totalCol);
+    saveAggToTab('race', agg);
+    tabsPopulated.push('Race/Ethnicity');
+  }
+
+  if (genderCol >= 0) {
+    const agg = aggregateRaw(rawParsedRows, yearCol, genderCol, successCol, totalCol, GENDER_LABELS);
+    saveAggToTab('gender', agg);
+    tabsPopulated.push('Gender');
+  }
+
+  if (ageCol >= 0) {
+    const agg = aggregateRaw(rawParsedRows, yearCol, ageCol, successCol, totalCol);
+    saveAggToTab('age', agg);
+    tabsPopulated.push('Age');
+  }
+
+  // Switch to race tab (or first populated tab) and reload
+  const firstTabId = raceCol >= 0 ? 'race' : genderCol >= 0 ? 'gender' : 'age';
+  activeTabId = firstTabId;
+  localStorage.setItem(STORAGE_PREFIX + 'activeTab', activeTabId);
+  updateTabBar();
+  loadTabState(activeTabId);
+  initializeSubgroups();
+  initializeYearHeaders();
+  recalculateAll();
+
+  closeImportModal();
+  showToast(`Imported into: ${tabsPopulated.join(', ')}`);
+}
+
+function saveAggToTab(tabId, agg) {
+  // Sort years; use most recent COLUMN_COUNT
+  const allYears = Object.keys(agg).sort();
+  const years = allYears.slice(-COLUMN_COUNT);
+
+  // Set first year header
+  if (years.length > 0) {
+    localStorage.setItem(storageKey(tabId, 'year-0'), fmtAcademicYear(years[0]));
+  }
+
+  // Collect all subgroups across all years, sorted
+  const sgSet = new Set(years.flatMap(y => Object.keys(agg[y] || {})));
+  const subgroups = [...sgSet].sort();
+
+  for (let row = 0; row < ROW_COUNT; row++) {
+    const sg = subgroups[row] || '';
+    localStorage.setItem(storageKey(tabId, `inputSubgroup-${row}`), sg);
+
+    for (let col = 0; col < COLUMN_COUNT; col++) {
+      const year = years[col];
+      const cell = year && sg ? agg[year]?.[sg] : null;
+      localStorage.setItem(storageKey(tabId, `inputNumerator-${row}-${col}`), cell ? Math.round(cell.s) : '');
+      localStorage.setItem(storageKey(tabId, `inputDenominator-${row}-${col}`), cell ? Math.round(cell.t) : '');
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Import modal
 // ─────────────────────────────────────────────────────────────────────────────
 function openImportModal() {
   document.getElementById('importOverlay').classList.remove('hidden');
   document.getElementById('importNumerator').value = '';
   document.getElementById('importDenominator').value = '';
+  document.getElementById('importRawPaste').value = '';
+  document.getElementById('rawColumnMap').classList.add('hidden');
+  document.getElementById('importRawApply').disabled = true;
+  // Always open on Raw tab
+  document.querySelectorAll('.import-tab').forEach(b => b.classList.remove('active'));
+  document.querySelector('.import-tab[data-mode="raw"]').classList.add('active');
+  document.getElementById('importModeRaw').classList.remove('hidden');
+  document.getElementById('importModeAgg').classList.add('hidden');
 }
 
 function closeImportModal() {
