@@ -203,9 +203,29 @@ code {
 
 .table-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  grid-template-areas:
+    "outcome total"
+    "success ppg1";
   gap: 1rem;
   margin-bottom: 1rem;
+}
+
+.wrapper-outcome { grid-area: outcome; }
+.wrapper-total   { grid-area: total; }
+.wrapper-success { grid-area: success; }
+.wrapper-ppg1    { grid-area: ppg1; }
+
+@media (max-width: 900px) {
+  .table-container {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "outcome"
+      "total"
+      "success"
+      "ppg1";
+  }
 }
 
 .table-wrapper {
