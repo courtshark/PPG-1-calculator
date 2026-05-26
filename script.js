@@ -585,7 +585,10 @@ function updateChart(results) {
   }
 
   const titleEl = document.getElementById('chartTitle');
-  if (titleEl) titleEl.textContent = `PPG-1 by Subgroup — ${yearLabel}`;
+  if (titleEl) {
+    const outcomeLabel = window._activeOutcomeShortLabel ? ` — ${window._activeOutcomeShortLabel}` : '';
+    titleEl.textContent = `PPG-1 by Subgroup${outcomeLabel} — ${yearLabel}`;
+  }
 
   // Adjust canvas height based on number of bars
   const height = Math.max(180, labels.length * 38 + 60);
@@ -824,6 +827,7 @@ function applyRawImport() {
 
   // First aggregation: all rows, first outcome
   reAggregate();
+  updateOutcomeLabels();
   renderFilterBar();
 
   // Switch to race tab (or first populated) and reload
@@ -929,7 +933,38 @@ function selectOutcome(idx) {
   activeOutcomeIdx = idx;
   renderFilterBar();
   reAggregate();
+  updateOutcomeLabels();
   showToast(`Outcome: ${storedOutcomes[idx].label}`);
+}
+
+// Shorten verbose column names for use in section headings
+function shortOutcomeLabel(label) {
+  return label
+    .replace(/^end\s+of\s+term\s+/i, '')
+    .replace(/\s+rates?$/i, '')
+    .trim() || label;
+}
+
+// Update all outcome-sensitive section headings to match the active outcome
+function updateOutcomeLabels() {
+  const raw   = storedOutcomes[activeOutcomeIdx]?.label || 'Success';
+  const short = shortOutcomeLabel(raw);
+
+  const set = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+
+  set('titleOutcomeCounts',   `${short} Counts`);
+  set('subtitleOutcomeCounts',`Enter the number of students in each subgroup who achieved ${short.toLowerCase()}.`);
+  set('titleSuccessRates',    `Subgroup ${short} Rates`);
+  set('subtitleSuccessRates', `Each cell shows the subgroup ${short.toLowerCase()} rate and the raw count used to calculate it.`);
+  set('titlePpgAnalysis',     `PPG-1 DI Analysis — ${short}`);
+
+  // Chart title if visible
+  const chartTitle = document.getElementById('chartTitle');
+  if (chartTitle && chartTitle.textContent) {
+    // updateChart() will re-set chartTitle; store the label so it can pick it up
+  }
+  // Store for chart to pick up on next update
+  window._activeOutcomeShortLabel = short;
 }
 
 function selectCourse(courseValue) {
