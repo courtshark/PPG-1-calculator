@@ -216,18 +216,20 @@
 
       <!-- Mode tabs -->
       <div class="import-tabs">
-        <button class="import-tab active" data-mode="raw">📊 Raw Student Data <span class="import-tab-hint">Auto-aggregates from row-level export</span></button>
-        <button class="import-tab" data-mode="agg">📋 Pre-aggregated <span class="import-tab-hint">Paste already-summed tables</span></button>
+        <button class="import-tab active" data-mode="upload">📂 Upload CSV / Excel <span class="import-tab-hint">Click or drag-and-drop your file</span></button>
+        <button class="import-tab" data-mode="paste">📋 Paste Data <span class="import-tab-hint">Copy-paste rows from Excel</span></button>
+        <button class="import-tab" data-mode="agg">📊 Pre-aggregated <span class="import-tab-hint">Already-summed tables</span></button>
       </div>
 
-      <!-- ── Mode: Raw student data ── -->
-      <div id="importModeRaw">
-        <p class="modal-hint">
-          Upload or paste your student-level export. Columns are auto-detected and
-          <strong>Race/Ethnicity, Gender, and Age</strong> tabs are populated at once.
-        </p>
+      <!-- ── Scrollable body ── -->
+      <div class="modal-body">
 
-        <!-- File drop zone -->
+      <!-- ── Mode: Upload ── -->
+      <div id="importModeUpload">
+        <p class="modal-hint">
+          Upload your student-level export (.csv, .xlsx, or .xls). Columns are auto-detected and
+          <strong>Race/Ethnicity, Gender, and Age</strong> tabs are all populated at once.
+        </p>
         <div id="rawDropZone" class="drop-zone">
           <label for="rawFileInput" class="drop-inner">
             <span class="drop-icon">📂</span>
@@ -237,33 +239,16 @@
           <input type="file" id="rawFileInput" accept=".csv,.xlsx,.xls" class="sr-only">
           <div id="rawFileStatus" class="file-status hidden"></div>
         </div>
+      </div>
 
-        <div class="import-or"><span>or paste below</span></div>
-
+      <!-- ── Mode: Paste ── -->
+      <div id="importModePaste" class="hidden">
+        <p class="modal-hint">
+          Paste your student-level export below (tab-separated or comma-separated).
+          Include the header row — columns are auto-detected.
+        </p>
         <div class="modal-field">
-          <textarea id="importRawPaste" rows="5" placeholder="AcademicYear&#9;Gender&#9;RaceEthnicityAncestry&#9;AgeGroup&#9;Success&#9;Enrolled at Census&#10;2023&#9;F&#9;Asian&#9;20 to 24&#9;1&#9;1&#10;2023&#9;M&#9;Hispanic&#9;19 or less&#9;0&#9;1"></textarea>
-        </div>
-
-        <!-- Column mapping (shown after detection) -->
-        <div id="rawColumnMap" class="column-map hidden">
-          <p class="map-label">Columns auto-detected — adjust if needed:</p>
-          <div class="map-grid">
-            <label>Year<select id="mapYear"></select></label>
-            <label>Race/Ethnicity<select id="mapRace"></select></label>
-            <label>Gender<select id="mapGender"></select></label>
-            <label>Age<select id="mapAge"></select></label>
-            <label>Success<select id="mapSuccess"></select></label>
-            <label>Enrolled/Total<select id="mapTotal"></select></label>
-            <label>Course/Section <span class="map-optional">(optional)</span><select id="mapCourse"></select></label>
-            <label>Retention / 2nd Outcome <span class="map-optional">(optional)</span><select id="mapRetention"></select></label>
-          </div>
-          <div id="rawPreview" class="raw-preview"></div>
-        </div>
-
-        <div class="modal-actions">
-          <button id="importDetect" class="btn-secondary">🔍 Detect Columns</button>
-          <button id="importRawApply" class="btn-primary" disabled>Apply — Populate All Tabs</button>
-          <button id="importRawCancel" class="btn-secondary">Cancel</button>
+          <textarea id="importRawPaste" rows="8" placeholder="AcademicYear&#9;Gender&#9;RaceEthnicityAncestry&#9;AgeGroup&#9;Success&#9;Enrolled at Census&#10;2023&#9;F&#9;Asian&#9;20 to 24&#9;1&#9;1&#10;2023&#9;M&#9;Hispanic&#9;19 or less&#9;0&#9;1"></textarea>
         </div>
       </div>
 
@@ -276,16 +261,46 @@
         <div class="modal-fields">
           <div class="modal-field">
             <label for="importNumerator"><strong>Outcome Counts</strong> (number of successes)</label>
-            <textarea id="importNumerator" rows="6" placeholder="Am Ind/Ntv Alsk&#9;45&#9;38&#9;52&#9;41&#10;Asian&#9;230&#9;245&#9;260&#9;271&#10;Black&#9;88&#9;95&#9;101&#9;97"></textarea>
+            <textarea id="importNumerator" rows="5" placeholder="Am Ind/Ntv Alsk&#9;45&#9;38&#9;52&#9;41&#10;Asian&#9;230&#9;245&#9;260&#9;271&#10;Black&#9;88&#9;95&#9;101&#9;97"></textarea>
           </div>
           <div class="modal-field">
             <label for="importDenominator"><strong>Total Count</strong> (total in subgroup)</label>
-            <textarea id="importDenominator" rows="6" placeholder="Am Ind/Ntv Alsk&#9;80&#9;75&#9;90&#9;85&#10;Asian&#9;350&#9;370&#9;380&#9;395&#10;Black&#9;140&#9;155&#9;160&#9;152"></textarea>
+            <textarea id="importDenominator" rows="5" placeholder="Am Ind/Ntv Alsk&#9;80&#9;75&#9;90&#9;85&#10;Asian&#9;350&#9;370&#9;380&#9;395&#10;Black&#9;140&#9;155&#9;160&#9;152"></textarea>
           </div>
         </div>
-        <div class="modal-actions">
-          <button id="importApply" class="btn-primary">Apply Import</button>
-          <button id="importCancel" class="btn-secondary">Cancel</button>
+      </div>
+
+      <!-- ── Column mapping (shared — shown after file upload or paste detect) ── -->
+      <div id="rawColumnMap" class="column-map hidden">
+        <p class="map-label">Columns auto-detected — adjust if needed:</p>
+        <div class="map-grid">
+          <label>Year<select id="mapYear"></select></label>
+          <label>Race/Ethnicity<select id="mapRace"></select></label>
+          <label>Gender<select id="mapGender"></select></label>
+          <label>Age<select id="mapAge"></select></label>
+          <label>Success<select id="mapSuccess"></select></label>
+          <label>Enrolled/Total<select id="mapTotal"></select></label>
+          <label>Course/Section <span class="map-optional">(optional)</span><select id="mapCourse"></select></label>
+          <label>Retention / 2nd Outcome <span class="map-optional">(optional)</span><select id="mapRetention"></select></label>
+        </div>
+        <div id="rawPreview" class="raw-preview"></div>
+      </div>
+
+      </div><!-- /.modal-body -->
+
+      <!-- ── Modal footer — action buttons ── -->
+      <div class="modal-footer">
+        <!-- Raw mode actions (upload + paste tabs) -->
+        <div id="rawModeActions">
+          <button id="importDetect" class="btn-secondary">🔍 Detect Columns</button>
+          <button id="importRawApply" class="btn-primary" disabled>✓ Apply — Populate All Tabs</button>
+          <button id="importRawCancel" class="btn-secondary">✕ Cancel</button>
+          <button id="btnDownloadTemplate" class="btn-ghost">⬇ Download Template</button>
+        </div>
+        <!-- Aggregated mode actions -->
+        <div id="aggModeActions" class="hidden">
+          <button id="importApply" class="btn-primary">✓ Apply Import</button>
+          <button id="importCancel" class="btn-secondary">✕ Cancel</button>
         </div>
       </div>
 

@@ -181,6 +181,7 @@ function setupActionButtons() {
   // Raw import
   document.getElementById('importDetect').addEventListener('click', detectRawColumns);
   document.getElementById('importRawApply').addEventListener('click', applyRawImport);
+  document.getElementById('btnDownloadTemplate').addEventListener('click', downloadTemplate);
 
   // Import mode tabs
   document.querySelectorAll('.import-tab').forEach(btn => {
@@ -188,8 +189,14 @@ function setupActionButtons() {
       document.querySelectorAll('.import-tab').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       const mode = btn.dataset.mode;
-      document.getElementById('importModeRaw').classList.toggle('hidden', mode !== 'raw');
-      document.getElementById('importModeAgg').classList.toggle('hidden', mode !== 'agg');
+      document.getElementById('importModeUpload').classList.toggle('hidden', mode !== 'upload');
+      document.getElementById('importModePaste').classList.toggle('hidden',  mode !== 'paste');
+      document.getElementById('importModeAgg').classList.toggle('hidden',    mode !== 'agg');
+      document.getElementById('rawModeActions').classList.toggle('hidden',   mode === 'agg');
+      document.getElementById('aggModeActions').classList.toggle('hidden',   mode !== 'agg');
+      // Hide column map when switching tabs
+      document.getElementById('rawColumnMap').classList.add('hidden');
+      document.getElementById('rawPreview').innerHTML = '';
     });
   });
 
@@ -743,17 +750,20 @@ function triggerColumnDetection() {
 }
 
 function detectRawColumns() {
-  const text = document.getElementById('importRawPaste').value.trim();
-  if (!text && !rawParsedRows.length) { showToast('Upload a file or paste some data first.'); return; }
-
-  if (text) {
+  // In paste mode, read from textarea; in upload mode, data is already in rawParsedRows
+  const activeMode = document.querySelector('.import-tab.active')?.dataset.mode;
+  if (activeMode === 'paste') {
+    const text = document.getElementById('importRawPaste').value.trim();
+    if (!text) { showToast('Paste some data first.'); return; }
     const rows = parseRaw(text);
     if (rows.length < 2) { showToast('Need at least a header row and one data row.'); return; }
     rawHeader     = rows[0];
     rawParsedRows = rows.slice(1);
     document.getElementById('rawFileStatus').classList.add('hidden');
+  } else if (!rawParsedRows.length) {
+    showToast('Upload a file first, or switch to Paste Data tab.');
+    return;
   }
-
   triggerColumnDetection();
 }
 
@@ -1024,15 +1034,82 @@ function openImportModal() {
   document.getElementById('importRawApply').disabled = true;
   rawHeader = [];
   rawParsedRows = [];
-  // Always open on Raw tab
+  // Always open on Upload tab
   document.querySelectorAll('.import-tab').forEach(b => b.classList.remove('active'));
-  document.querySelector('.import-tab[data-mode="raw"]').classList.add('active');
-  document.getElementById('importModeRaw').classList.remove('hidden');
+  document.querySelector('.import-tab[data-mode="upload"]').classList.add('active');
+  document.getElementById('importModeUpload').classList.remove('hidden');
+  document.getElementById('importModePaste').classList.add('hidden');
   document.getElementById('importModeAgg').classList.add('hidden');
+  document.getElementById('rawModeActions').classList.remove('hidden');
+  document.getElementById('aggModeActions').classList.add('hidden');
 }
 
 function closeImportModal() {
   document.getElementById('importOverlay').classList.add('hidden');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Template download
+// ─────────────────────────────────────────────────────────────────────────────
+function downloadTemplate() {
+  const doCreate = () => {
+    const wb = XLSX.utils.book_new();
+
+    // ── Sheet 1: Template data ──
+    const templateRows = [
+      ['AcademicYear','RaceEthnicityAncestry','Gender','AgeGroup','Success','EnrolledAtCensus','Course','EndOfTermRetention'],
+      ['2022-23','Asian',    'F','20 to 24',  1,1,'CIS A111',1],
+      ['2022-23','Hispanic', 'M','19 or less',0,1,'CIS A111',1],
+      ['2022-23','White',    'F','25 to 39',  1,1,'CIS A111',1],
+      ['2022-23','Black',    'M','20 to 24',  0,1,'BUS A234',0],
+      ['2023-24','Asian',    'M','20 to 24',  1,1,'CIS A111',1],
+      ['2023-24','Hispanic', 'F','19 or less',1,1,'BUS A234',1],
+    ];
+    const ws1 = XLSX.utils.aoa_to_sheet(templateRows);
+    ws1['!cols'] = [
+      {wch:12},{wch:22},{wch:10},{wch:14},{wch:10},{wch:18},{wch:12},{wch:22}
+    ];
+    XLSX.utils.book_append_sheet(wb, ws1, 'Template');
+
+    // ── Sheet 2: Instructions ──
+    const instrRows = [
+      ['PPG-1 Calculator — Import Instructions','','',''],
+      ['','','',''],
+      ['Column','Required','Description','Accepted Values / Examples'],
+      ['AcademicYear',         'Required', 'Academic year for the enrollment record.',                          '2022-23  |  2023-24  |  2024-25'],
+      ['RaceEthnicityAncestry','Required', 'Student race/ethnicity group.',                                    'Asian, Hispanic, White, Black, Filipino, Multiple, Unknown, Am Ind/Ntv Alsk, Pacific Islander'],
+      ['Gender',               'Optional', 'Student gender. Codes N and B both map to "Non-binary/Other".',    'M or Male, F or Female, N or Non-binary, B'],
+      ['AgeGroup',             'Optional', 'Student age group.',                                               'Under 18, 19 or less, 20 to 24, 25 to 39, 40+, Unknown'],
+      ['Success',              'Required', '1 = student achieved the success outcome, 0 = did not.',           '1  |  0'],
+      ['EnrolledAtCensus',     'Required', '1 = enrolled at census (always 1 — one row per enrollment).',      '1'],
+      ['Course',               'Optional', 'Course or section code. Enables the Course filter in the UI.',     'CIS A111, BUS A234, CHT A015N'],
+      ['EndOfTermRetention',   'Optional', '1 = student was retained through end of term, 0 = withdrew/dropped.','1  |  0'],
+      ['','','',''],
+      ['Key Notes','','',''],
+      ['• One row per student per term enrollment (not per student).','','',''],
+      ['• Only AcademicYear, RaceEthnicityAncestry, Success, and EnrolledAtCensus are required.','','',''],
+      ['• The tool uses the most recent 4 academic years automatically.','','',''],
+      ['• Column names do not need to match exactly — they are auto-detected.','','',''],
+      ['• Delete or keep the sample rows in the Template sheet before importing.','','',''],
+      ['• Save as .csv or keep as .xlsx — both formats are supported.','','',''],
+    ];
+    const ws2 = XLSX.utils.aoa_to_sheet(instrRows);
+    ws2['!cols'] = [{wch:24},{wch:10},{wch:58},{wch:55}];
+    XLSX.utils.book_append_sheet(wb, ws2, 'Instructions');
+
+    XLSX.writeFile(wb, 'PPG1-Import-Template.xlsx');
+    showToast('Template downloaded — see the Instructions sheet for guidance.');
+  };
+
+  if (typeof XLSX !== 'undefined') {
+    doCreate();
+  } else {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.20.3/dist/xlsx.full.min.js';
+    script.onload  = doCreate;
+    script.onerror = () => showToast('Could not load file library — check your connection.');
+    document.head.appendChild(script);
+  }
 }
 
 function applyImport() {

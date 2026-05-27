@@ -465,11 +465,22 @@ td input:focus { outline: 2px solid rgba(242,107,42,.3); border-color: var(--ora
   background: #fff;
   border-radius: 20px;
   box-shadow: 0 24px 64px rgba(20,50,74,.22);
-  padding: 1.5rem;
+  padding: 1.5rem 0 0;
   width: 100%;
   max-width: 680px;
   max-height: 90vh;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+.modal-header,
+.import-tabs {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+.modal-body {
+  flex: 1;
+  padding: 0 1.5rem .5rem;
 }
 
 .modal-header {
@@ -570,7 +581,7 @@ td input:focus { outline: 2px solid rgba(242,107,42,.3); border-color: var(--ora
 .import-tabs {
   display: flex;
   gap: .4rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0;
   border-bottom: 1px solid var(--border);
   padding-bottom: .6rem;
   flex-wrap: wrap;
@@ -633,6 +644,35 @@ td input:focus { outline: 2px solid rgba(242,107,42,.3); border-color: var(--ora
 .preview-table th:first-child, .preview-table td:first-child { text-align: left; }
 
 .modal-actions { display: flex; gap: .6rem; flex-wrap: wrap; }
+
+/* Sticky footer inside the modal — stays at bottom */
+.modal-footer {
+  position: sticky;
+  bottom: 0;
+  border-top: 1px solid var(--border);
+  padding: .9rem 1.4rem;
+  background: #fafafa;
+  border-radius: 0 0 18px 18px;
+  display: flex;
+  gap: .6rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: auto;
+}
+.modal-footer > div { display: contents; }
+
+.btn-ghost {
+  padding: .45rem 1rem;
+  background: transparent;
+  color: var(--navy-soft);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  font: inherit;
+  font-size: .85rem;
+  cursor: pointer;
+  margin-left: auto;        /* push template button to far right */
+}
+.btn-ghost:hover { background: var(--sky); border-style: solid; }
 
 .btn-primary {
   padding: .5rem 1.2rem;
