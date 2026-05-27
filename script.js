@@ -1134,10 +1134,24 @@ function exportCSV() {
 // Clear all data for current tab
 // ─────────────────────────────────────────────────────────────────────────────
 function clearAll() {
-  if (!confirm('Clear all data for this tab?')) return;
-  const tab = TABS.find(t => t.id === activeTabId);
-  const defaults = tab?.defaultSubgroups || [];
+  if (!confirm('Clear all data for all tabs?')) return;
 
+  // Clear every tab's data from localStorage and reset inputs
+  TABS.forEach(tab => {
+    const defaults = tab.defaultSubgroups || [];
+    for (let row = 0; row < ROW_COUNT; row++) {
+      localStorage.removeItem(storageKey(tab.id, `inputSubgroup-${row}`));
+      for (let col = 0; col < COLUMN_COUNT; col++) {
+        localStorage.removeItem(storageKey(tab.id, `inputNumerator-${row}-${col}`));
+        localStorage.removeItem(storageKey(tab.id, `inputDenominator-${row}-${col}`));
+      }
+    }
+    localStorage.removeItem(storageKey(tab.id, 'year-0'));
+  });
+
+  // Clear the active tab's visible inputs
+  const activeTab = TABS.find(t => t.id === activeTabId);
+  const defaults = activeTab?.defaultSubgroups || [];
   for (let row = 0; row < ROW_COUNT; row++) {
     const sgEl = document.getElementById(`inputSubgroup-${row}`);
     if (sgEl) sgEl.value = defaults[row] || '';
@@ -1146,16 +1160,34 @@ function clearAll() {
       const dEl = document.getElementById(`inputDenominator-${row}-${col}`);
       if (nEl) nEl.value = '';
       if (dEl) dEl.value = '';
-      localStorage.removeItem(storageKey(activeTabId, `inputNumerator-${row}-${col}`));
-      localStorage.removeItem(storageKey(activeTabId, `inputDenominator-${row}-${col}`));
     }
-    localStorage.removeItem(storageKey(activeTabId, `inputSubgroup-${row}`));
   }
+
+  // Clear year header
+  const year0El = document.getElementById('year-0');
+  if (year0El) year0El.value = '';
+  [`year-0`,`year-1`,`year-2`,`year-3`,
+   `success-year-0`,`success-year-1`,`success-year-2`,`success-year-3`,
+   `denominator-year-0`,`denominator-year-1`,`denominator-year-2`,`denominator-year-3`,
+   `ppg-year-0`,`ppg-year-1`,`ppg-year-2`,`ppg-year-3`
+  ].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+
+  // Reset raw data state and hide filter bar
+  storedRawRows   = [];
+  storedRawColMap = {};
+  storedCourseCol = -1;
+  storedOutcomes  = [];
+  activeOutcomeIdx  = 0;
+  activeCourseValue = '';
+  document.getElementById('courseFilterBar')?.classList.add('hidden');
+
   history.replaceState(null, '', window.location.pathname);
   initializeSubgroups();
-  initializeYearHeaders();
   recalculateAll();
-  showToast('Data cleared.');
+  showToast('All data cleared.');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
