@@ -15,9 +15,10 @@ const TABS = [
   { id: 'race',       label: 'Race/Ethnicity',   defaultSubgroups: ['Am Ind/Ntv Alsk','Asian','Black','Hispanic/Latinx','More than one','Unknown','White','',''] },
   { id: 'gender',     label: 'Gender',            defaultSubgroups: ['Men','Women','Non-binary/Other','Unknown','','','','',''] },
   { id: 'age',        label: 'Age',               defaultSubgroups: ['Under 18','18–24','25–39','40+','Unknown','','','',''] },
-  { id: 'disability', label: 'Disability Status', defaultSubgroups: ['Students with Disability','Students without Disability','','','','','','',''] },
-  { id: 'foster',     label: 'Foster Youth',      defaultSubgroups: ['Foster Youth','Non-Foster Youth','','','','','','',''] },
-  { id: 'veterans',   label: 'Veterans',          defaultSubgroups: ['Veterans','Non-Veterans','','','','','','',''] },
+  // Uncomment to re-enable these tabs:
+  // { id: 'disability', label: 'Disability Status', defaultSubgroups: ['Students with Disability','Students without Disability','','','','','','',''] },
+  // { id: 'foster',     label: 'Foster Youth',      defaultSubgroups: ['Foster Youth','Non-Foster Youth','','','','','','',''] },
+  // { id: 'veterans',   label: 'Veterans',          defaultSubgroups: ['Veterans','Non-Veterans','','','','','','',''] },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
