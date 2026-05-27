@@ -700,7 +700,7 @@ function handleFileUpload(file) {
     if (typeof XLSX === 'undefined') {
       // Lazy-load SheetJS only when first Excel file is selected
       const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.20.3/dist/xlsx.full.min.js';
+      script.src = '/xlsx.full.min.js';
       script.onload  = doRead;
       script.onerror = () => {
         showToast('Could not load Excel parser — try saving as .csv first.');
@@ -1105,7 +1105,7 @@ function downloadTemplate() {
     doCreate();
   } else {
     const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.20.3/dist/xlsx.full.min.js';
+    script.src = '/xlsx.full.min.js';
     script.onload  = doCreate;
     script.onerror = () => showToast('Could not load file library — check your connection.');
     document.head.appendChild(script);
