@@ -426,6 +426,110 @@ td input:focus { outline: 2px solid rgba(242,107,42,.3); border-color: var(--ora
 .di-year-row { font-size: .88rem; color: var(--navy-soft); }
 
 /* ─────────────────────────────────────────────────────────────────────────────
+   PPG section header (title + Simple/Technical toggle)
+───────────────────────────────────────────────────────────────────────────── */
+.ppg-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: .6rem;
+  flex-wrap: wrap;
+}
+.ppg-section-header h2 { margin: 0 0 .15rem; }
+.ppg-section-header h4 { margin: 0; }
+
+.view-toggle {
+  display: flex;
+  border: 1.5px solid var(--border);
+  border-radius: 9px;
+  overflow: hidden;
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: .25rem;
+}
+.vt-btn {
+  padding: .35rem 1rem;
+  border: none;
+  background: #fff;
+  color: var(--navy-soft);
+  font: inherit;
+  font-size: .82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.vt-btn + .vt-btn { border-left: 1.5px solid var(--border); }
+.vt-btn.vt-active  { background: var(--navy); color: #fff; }
+.vt-btn:not(.vt-active):hover { background: var(--sky); }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   PPG banner (Option C summary strip)
+───────────────────────────────────────────────────────────────────────────── */
+.ppg-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: .85rem;
+  padding: .8rem 1rem;
+  border-radius: 10px;
+  margin-bottom: .85rem;
+  line-height: 1.4;
+}
+.ppg-banner-ok    { background: #eaf4ee; border: 1px solid #b8dfc4; }
+.ppg-banner-alert { background: #fdf3f3; border: 1px solid #f5c6c6; }
+.ppg-banner-icon  { font-size: 1.15rem; flex-shrink: 0; margin-top: .05rem; }
+.ppg-banner-headline {
+  display: block;
+  font-weight: 700;
+  font-size: .9rem;
+}
+.ppg-banner-ok    .ppg-banner-headline { color: #1a6636; }
+.ppg-banner-alert .ppg-banner-headline { color: #b91c1c; }
+.ppg-banner-sub {
+  display: block;
+  font-size: .8rem;
+  margin-top: .15rem;
+  color: #555;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Simple view cell content
+───────────────────────────────────────────────────────────────────────────── */
+.simple-status {
+  font-size: .8rem;
+  font-weight: 700;
+  margin-bottom: .3rem;
+  line-height: 1.2;
+}
+.status-di    .simple-status { color: #b91c1c; }
+.status-watch .simple-status { color: #9a6e00; }
+.status-high  .simple-status { color: #1a6636; }
+.status-good  .simple-status,
+.analysis-cell:not(.status-di):not(.status-watch):not(.status-high) .simple-status { color: var(--navy-soft); }
+
+.simple-rates {
+  font-size: .83rem;
+  color: #333;
+  line-height: 1.3;
+}
+.simple-rates strong { color: var(--navy); }
+
+.simple-trend {
+  font-size: .75rem;
+  color: var(--muted);
+  margin-top: .2rem;
+}
+
+.simple-cta {
+  font-size: .75rem;
+  font-weight: 600;
+  color: #b91c1c;
+  margin-top: .3rem;
+  padding-top: .3rem;
+  border-top: 1px solid rgba(185,28,28,.15);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
    Chart card
 ───────────────────────────────────────────────────────────────────────────── */
 .chart-card {

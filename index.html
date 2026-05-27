@@ -156,9 +156,27 @@
 
       <!-- PPG-1 DI Analysis -->
       <div class="table-wrapper wrapper-ppg1">
-        <h2 id="titlePpgAnalysis">PPG-1 DI Analysis</h2>
-        <h4 id="subtitlePpgAnalysis">Each cell shows the PPG-1 value, the all-other comparison rate, the margin of error threshold, and the DI decision.</h4>
-        <div class="legend-row">
+        <div class="ppg-section-header">
+          <div>
+            <h2 id="titlePpgAnalysis">Equity Gap Analysis</h2>
+            <h4 id="subtitlePpgAnalysis">Comparing each group's success rate to all other students combined.</h4>
+          </div>
+          <div class="view-toggle">
+            <button id="ppgViewSimple"     class="vt-btn vt-active">Simple</button>
+            <button id="ppgViewTechnical"  class="vt-btn">Technical</button>
+          </div>
+        </div>
+        <!-- Option C banner -->
+        <div id="ppgBanner" class="ppg-banner hidden"></div>
+        <!-- Legend — simple mode -->
+        <div class="legend-row" id="legendSimple">
+          <span class="legend-pill legend-di">⚠ Gap detected</span>
+          <span class="legend-pill legend-watch">↘ Below average</span>
+          <span class="legend-pill legend-good">✓ Above / On track</span>
+          <span class="legend-pill legend-muted">Not enough data</span>
+        </div>
+        <!-- Legend — technical mode (hidden by default) -->
+        <div class="legend-row hidden" id="legendTechnical">
           <span class="legend-pill legend-di">DI flagged</span>
           <span class="legend-pill legend-watch">Below peers</span>
           <span class="legend-pill legend-good">Within threshold or higher</span>
@@ -185,9 +203,6 @@
       </div>
 
     </div><!-- /.table-container -->
-
-    <!-- ── DI Summary banner ─────────────────────────────────────────────── -->
-    <div id="diSummary"></div>
 
     <!-- ── PPG-1 Chart ───────────────────────────────────────────────────── -->
     <div class="chart-card" id="chartCard" style="display:none">

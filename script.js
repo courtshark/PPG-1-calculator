@@ -25,9 +25,10 @@ const TABS = [
 // ─────────────────────────────────────────────────────────────────────────────
 // State
 // ─────────────────────────────────────────────────────────────────────────────
-let activeTabId = 'race';
-let ppg1Chart = null;
-let ppgResults = []; // [col][row] computed results
+let activeTabId  = 'race';
+let ppg1Chart    = null;
+let ppgResults   = []; // [col][row] computed results
+let ppgViewMode  = 'simple'; // 'simple' | 'technical'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DOMContentLoaded
@@ -169,6 +170,10 @@ function setupActionButtons() {
   document.getElementById('btnShare').addEventListener('click', shareLink);
   document.getElementById('btnPrint').addEventListener('click', () => window.print());
   document.getElementById('btnClear').addEventListener('click', clearAll);
+
+  // Simple / Technical view toggle
+  document.getElementById('ppgViewSimple').addEventListener('click', () => setPpgViewMode('simple'));
+  document.getElementById('ppgViewTechnical').addEventListener('click', () => setPpgViewMode('technical'));
 
   // Modal close buttons
   document.getElementById('importClose').addEventListener('click', closeImportModal);
@@ -331,8 +336,29 @@ function recalculateAll() {
   const grid = buildDataGrid();
   calculateSuccessRates(grid);
   ppgResults = calculatePpgAnalysis(grid);
-  updateDiSummary(ppgResults);
+  updatePpgBanner(ppgResults);
   updateChart(ppgResults);
+}
+
+function setPpgViewMode(mode) {
+  ppgViewMode = mode;
+  // Toggle button states
+  document.getElementById('ppgViewSimple').classList.toggle('vt-active', mode === 'simple');
+  document.getElementById('ppgViewTechnical').classList.toggle('vt-active', mode === 'technical');
+  // Toggle legends
+  document.getElementById('legendSimple').classList.toggle('hidden', mode !== 'simple');
+  document.getElementById('legendTechnical').classList.toggle('hidden', mode !== 'technical');
+  // Update subtitle
+  const sub = document.getElementById('subtitlePpgAnalysis');
+  if (sub) sub.textContent = mode === 'simple'
+    ? "Comparing each group's success rate to all other students combined."
+    : 'Each cell shows the PPG-1 value, the comparison rate, Threshold E margin of error, and DI decision.';
+  // Re-render cells with new mode
+  if (ppgResults.length) {
+    const grid = buildDataGrid();
+    calculatePpgAnalysis(grid);
+    updateChart(ppgResults);
+  }
 }
 
 function buildDataGrid() {
@@ -409,7 +435,10 @@ function calculatePpgAnalysis(grid) {
       if (!cell.hasPopulation) continue;
 
       if (cell.denominator <= MINIMUM_REPORTABLE_N) {
-        renderInfoCell(out, 'Insufficient data', `n = ${cell.denominator}. CCCCO advises against estimating DI when n ≤ 10.`, 'status-muted');
+        renderInfoCell(out,
+          ppgViewMode === 'simple' ? 'Not enough data' : 'Insufficient data',
+          `n = ${cell.denominator}. CCCCO advises against estimating DI when n ≤ 10.`,
+          'status-muted');
         results[col][row] = { label: 'Insufficient data', status: 'status-muted' };
         continue;
       }
@@ -429,28 +458,55 @@ function calculatePpgAnalysis(grid) {
       const statusObj = getPpgStatus(ppg1, moe);
       const studentsNeeded = ppg1 < 0 ? Math.round(Math.abs(ppg1 / 100) * cell.denominator) : null;
 
-      // Trend arrow vs previous year
+      // Trend vs previous year
       const prev = col > 0 ? results[col - 1][row] : null;
-      let trendHtml = '';
+      let trendHtml = '', trendWord = '';
       if (prev && prev.ppg1 !== undefined) {
         const delta = ppg1 - prev.ppg1;
         if (Math.abs(delta) >= 0.5) {
-          trendHtml = delta > 0
-            ? `<span class="trend-up" title="Improving: +${delta.toFixed(1)}pp vs prior year">↑</span>`
-            : `<span class="trend-dn" title="Worsening: ${delta.toFixed(1)}pp vs prior year">↓</span>`;
+          if (delta > 0) {
+            trendHtml = `<span class="trend-up" title="Improving: +${delta.toFixed(1)}pp vs prior year">↑</span>`;
+            trendWord = 'Improving ↑';
+          } else {
+            trendHtml = `<span class="trend-dn" title="Worsening: ${delta.toFixed(1)}pp vs prior year">↓</span>`;
+            trendWord = 'Worsening ↓';
+          }
         } else {
           trendHtml = `<span class="trend-flat" title="Stable vs prior year">→</span>`;
+          trendWord = 'Stable →';
         }
       }
 
       out.className = `analysis-cell ${statusObj.className}`;
-      out.innerHTML = `
-        <div class="ppg-value">${formatPercent(ppg1)}${trendHtml}</div>
-        <div class="ppg-meta">All other: ${formatPercent(otherRate * 100)}</div>
-        <div class="ppg-meta">Threshold E: ${formatPercent(moe)}</div>
-        <div class="ppg-meta">Close gap: ${studentsNeeded === null ? '—' : studentsNeeded}</div>
-        <span class="status-badge">${statusObj.label}</span>
-      `;
+
+      if (ppgViewMode === 'simple') {
+        // Plain-English labels
+        const simpleLabel = {
+          'status-di':    '⚠ Gap detected',
+          'status-watch': '↘ Below average',
+          'status-high':  '✓ Above average',
+        }[statusObj.className] || '— On track';
+
+        const trendLine = trendWord
+          ? `<div class="simple-trend">${trendWord}</div>` : '';
+        const ctaLine = statusObj.className === 'status-di' && studentsNeeded !== null
+          ? `<div class="simple-cta">Need ${studentsNeeded} more student${studentsNeeded !== 1 ? 's' : ''} to close the gap</div>` : '';
+
+        out.innerHTML = `
+          <div class="simple-status">${simpleLabel}</div>
+          <div class="simple-rates">${formatPercent(sgRate * 100)} vs ${formatPercent(otherRate * 100)} for others</div>
+          ${trendLine}${ctaLine}
+        `;
+      } else {
+        // Technical view — full numbers
+        out.innerHTML = `
+          <div class="ppg-value">${formatPercent(ppg1)}${trendHtml}</div>
+          <div class="ppg-meta">All other: ${formatPercent(otherRate * 100)}</div>
+          <div class="ppg-meta">Threshold E: ${formatPercent(moe)}</div>
+          <div class="ppg-meta">Close gap: ${studentsNeeded === null ? '—' : studentsNeeded}</div>
+          <span class="status-badge">${statusObj.label}</span>
+        `;
+      }
 
       results[col][row] = { ppg1, moe, sgRate, otherRate, status: statusObj.className, label: statusObj.label };
     }
@@ -461,9 +517,9 @@ function calculatePpgAnalysis(grid) {
 // ─────────────────────────────────────────────────────────────────────────────
 // DI Summary banner
 // ─────────────────────────────────────────────────────────────────────────────
-function updateDiSummary(results) {
-  const container = document.getElementById('diSummary');
-  if (!container) return;
+function updatePpgBanner(results) {
+  const banner = document.getElementById('ppgBanner');
+  if (!banner) return;
 
   const yearLabels = Array.from({ length: COLUMN_COUNT }, (_, i) =>
     document.getElementById(`year-${i}`)?.value || `Year ${i + 1}`
@@ -471,42 +527,47 @@ function updateDiSummary(results) {
 
   const cols = [];
   for (let col = 0; col < COLUMN_COUNT; col++) {
-    const flagged = [], total = [];
+    const flagged = [], below = [], total = [];
     for (let row = 0; row < ROW_COUNT; row++) {
       const r = results[col][row];
       if (!r) continue;
       const sg = document.getElementById(`inputSubgroup-${row}`)?.value;
       if (!sg) continue;
       total.push(sg);
-      if (r.status === 'status-di') flagged.push(sg);
+      if (r.status === 'status-di')    flagged.push(sg);
+      if (r.status === 'status-watch') below.push(sg);
     }
-    if (total.length > 0) cols.push({ year: yearLabels[col], flagged, total: total.length });
+    if (total.length > 0) cols.push({ year: yearLabels[col], flagged, below, total: total.length });
   }
 
-  if (cols.length === 0) { container.innerHTML = ''; return; }
+  if (cols.length === 0) { banner.classList.add('hidden'); return; }
 
   const recent = cols[cols.length - 1];
-  const anyFlagged = cols.some(c => c.flagged.length > 0);
+  banner.classList.remove('hidden');
 
-  let html = `<div class="di-summary-inner">`;
-  html += `<div class="di-summary-headline">`;
   if (recent.flagged.length === 0) {
-    html += `<span class="di-badge di-badge-ok">✓ No DI flagged in ${recent.year}</span>`;
+    const watchNote = recent.below.length
+      ? `<span class="ppg-banner-sub">${recent.below.join(', ')} ${recent.below.length === 1 ? 'is' : 'are'} slightly below average but within the margin of error.</span>`
+      : '';
+    banner.className = 'ppg-banner ppg-banner-ok';
+    banner.innerHTML = `
+      <span class="ppg-banner-icon">✓</span>
+      <div>
+        <span class="ppg-banner-headline">No equity gaps detected in ${recent.year}</span>
+        ${watchNote}
+      </div>`;
   } else {
-    html += `<span class="di-badge di-badge-alert">⚠ ${recent.flagged.length} of ${recent.total} subgroup${recent.flagged.length !== 1 ? 's' : ''} DI-flagged in ${recent.year}</span>`;
+    const names = recent.flagged.join(', ');
+    const n = recent.flagged.length;
+    const t = recent.total;
+    banner.className = 'ppg-banner ppg-banner-alert';
+    banner.innerHTML = `
+      <span class="ppg-banner-icon">⚠</span>
+      <div>
+        <span class="ppg-banner-headline">${n} of ${t} group${n !== 1 ? 's' : ''} ${n !== 1 ? 'have' : 'has'} an equity gap in ${recent.year}</span>
+        <span class="ppg-banner-sub">${names} ${n === 1 ? 'is' : 'are'} passing at a rate significantly below other students. See the rows below for details.</span>
+      </div>`;
   }
-  html += `</div>`;
-
-  if (anyFlagged) {
-    html += `<div class="di-summary-detail">`;
-    cols.forEach(c => {
-      if (c.flagged.length === 0) return;
-      html += `<div class="di-year-row"><strong>${c.year}:</strong> ${c.flagged.join(', ')}</div>`;
-    });
-    html += `</div>`;
-  }
-  html += `</div>`;
-  container.innerHTML = html;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
