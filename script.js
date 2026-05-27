@@ -15,6 +15,7 @@ const TABS = [
   { id: 'race',       label: 'Race/Ethnicity',   defaultSubgroups: ['Am Ind/Ntv Alsk','Asian','Black','Hispanic/Latinx','More than one','Unknown','White','',''] },
   { id: 'gender',     label: 'Gender',            defaultSubgroups: ['Men','Women','Non-binary/Other','Unknown','','','','',''] },
   { id: 'age',        label: 'Age',               defaultSubgroups: ['Under 18','18–24','25–39','40+','Unknown','','','',''] },
+  { id: 'course',     label: 'By Course',         defaultSubgroups: ['','','','','','','','',''] },
   // Uncomment to re-enable these tabs:
   // { id: 'disability', label: 'Disability Status', defaultSubgroups: ['Students with Disability','Students without Disability','','','','','','',''] },
   // { id: 'foster',     label: 'Foster Youth',      defaultSubgroups: ['Foster Youth','Non-Foster Youth','','','','','','',''] },
@@ -83,6 +84,7 @@ function switchTab(tabId) {
   initializeSubgroups();
   initializeYearHeaders();
   recalculateAll();
+  if (storedRawRows.length) renderFilterBar(); // show/hide course pills based on active tab
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -851,7 +853,12 @@ function applyRawImport() {
   initializeYearHeaders();
   recalculateAll();
 
-  const tabNames = [raceCol >= 0 && 'Race/Ethnicity', genderCol >= 0 && 'Gender', ageCol >= 0 && 'Age'].filter(Boolean);
+  const tabNames = [
+    raceCol        >= 0 && 'Race/Ethnicity',
+    genderCol      >= 0 && 'Gender',
+    ageCol         >= 0 && 'Age',
+    storedCourseCol >= 0 && 'By Course',
+  ].filter(Boolean);
   closeImportModal();
   showToast(`Imported into: ${tabNames.join(', ')}`);
 }
@@ -859,9 +866,11 @@ function applyRawImport() {
 // Aggregate all demographic tabs from a row set + effective column map
 function populateTabsFromRows(rows, colMap) {
   const { yearCol, raceCol, genderCol, ageCol, successCol, totalCol } = colMap;
-  if (raceCol   >= 0) saveAggToTab('race',   aggregateRaw(rows, yearCol, raceCol,   successCol, totalCol));
-  if (genderCol >= 0) saveAggToTab('gender', aggregateRaw(rows, yearCol, genderCol, successCol, totalCol, GENDER_LABELS));
-  if (ageCol    >= 0) saveAggToTab('age',    aggregateRaw(rows, yearCol, ageCol,    successCol, totalCol));
+  if (raceCol        >= 0) saveAggToTab('race',   aggregateRaw(rows,           yearCol, raceCol,        successCol, totalCol));
+  if (genderCol      >= 0) saveAggToTab('gender', aggregateRaw(rows,           yearCol, genderCol,      successCol, totalCol, GENDER_LABELS));
+  if (ageCol         >= 0) saveAggToTab('age',    aggregateRaw(rows,           yearCol, ageCol,         successCol, totalCol));
+  // Course tab always aggregates over ALL rows (never filtered by course — course IS the dimension)
+  if (storedCourseCol >= 0) saveAggToTab('course', aggregateRaw(storedRawRows, yearCol, storedCourseCol, successCol, totalCol));
 }
 
 // Shared re-aggregation — applies both active outcome and active course filter
@@ -907,7 +916,8 @@ function renderFilterBar() {
   }
 
   // Course pills — only shown if course column was mapped
-  if (storedCourseCol >= 0) {
+  // Don't show course pills on the By Course tab — course IS the dimension there
+  if (storedCourseCol >= 0 && activeTabId !== 'course') {
     if (hasContent) {
       const sep = document.createElement('span');
       sep.className = 'cf-sep';
