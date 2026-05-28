@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OCC PPG-1 Disproportionate Impact Calculator</title>
   <link rel="stylesheet" href="style.css">
+  <!-- Google Search Console verification — replace content value with code from Search Console -->
+  <meta name="google-site-verification" content="64d1999a1bd3ff3a">
 </head>
 
 <body>
@@ -14,10 +16,10 @@
     <section class="hero">
       <div class="hero-copy">
         <p class="eyebrow">Orange Coast College</p>
-        <h1>Equity Gap (Percentage Point Gap Minus One) Calculator</h1>
+        <h1>Equity Gap Calculator</h1>
         <p class="hero-text">
-          Compare each subgroup to all other students combined using the official California
-          Community Colleges Chancellor's Office PPG-1 methodology for positive outcomes.
+          See which student groups are succeeding at lower rates than their peers — and by how much.
+          Uses the official CCCCO PPG-1 (Percentage Point Gap) methodology.
         </p>
       </div>
       <div class="hero-mark">
@@ -68,8 +70,8 @@
     <div class="toolbar">
       <nav id="tabBar" class="tab-bar" role="tablist" aria-label="Demographic category"></nav>
       <div class="action-bar">
-        <button id="btnImport" class="action-btn" title="Paste data from Excel">📥 Import</button>
-        <button id="btnExport" class="action-btn" title="Download results as CSV">📤 Export CSV</button>
+        <button id="btnImport" class="action-btn action-btn-primary" title="Import data from a file or paste from Excel">📥 Import Data</button>
+        <button id="btnExport" class="action-btn" title="Download results as Excel (.xlsx)">📤 Export Excel</button>
         <button id="btnShare"  class="action-btn" title="Copy shareable link">🔗 Share</button>
         <button id="btnPrint"  class="action-btn" title="Print this page">🖨 Print</button>
         <button id="btnClear"  class="action-btn action-btn-danger" title="Clear all data for this tab">🗑 Clear</button>
@@ -84,8 +86,9 @@
 
       <!-- Outcome Counts -->
       <div class="table-wrapper wrapper-outcome">
-        <h2 id="titleOutcomeCounts">Outcome Counts</h2>
-        <h4 id="subtitleOutcomeCounts">Enter the number of students in each subgroup who achieved the outcome you are measuring.</h4>
+        <div class="section-step">Step 1 — Enter Your Data</div>
+        <h2 id="titleOutcomeCounts">Students Who Succeeded</h2>
+        <h4 id="subtitleOutcomeCounts">How many students in each group passed, completed, or achieved the outcome?</h4>
         <table id="numeratorTable">
           <tr>
             <th>Race/Ethnicity</th>
@@ -108,8 +111,9 @@
 
       <!-- Total Count -->
       <div class="table-wrapper wrapper-total">
-        <h2 id="titleTotalCount">Enrolled at Census</h2>
-        <h4 id="subtitleTotalCount">Total enrolled students per subgroup — the denominator for <em>all</em> outcomes (Success, Retention, etc.)</h4>
+        <div class="section-step">Step 1 — Enter Your Data</div>
+        <h2 id="titleTotalCount">Total Students Enrolled</h2>
+        <h4 id="subtitleTotalCount">How many students were enrolled in each group? (Used as the denominator for all outcomes.)</h4>
         <table id="denominatorTable">
           <tr>
             <th>Race/Ethnicity</th>
@@ -132,8 +136,15 @@
 
       <!-- Subgroup Success Rates -->
       <div class="table-wrapper wrapper-success">
-        <h2 id="titleSuccessRates">Subgroup Success Rates</h2>
-        <h4 id="subtitleSuccessRates">Each cell shows the subgroup rate and the raw count used to calculate it.</h4>
+        <div class="section-step section-step-secondary">Reference</div>
+        <div class="sr-title-row">
+          <h2 id="titleSuccessRates">Success Rates by Group</h2>
+          <div class="view-toggle">
+            <button id="srDisplayPct" class="vt-btn vt-active">%</button>
+            <button id="srDisplayCounts" class="vt-btn">#</button>
+          </div>
+        </div>
+        <h4 id="subtitleSuccessRates">Toggle between percentages (%) and raw counts (#).</h4>
         <table id="successRatesTable">
           <tr>
             <th>Race/Ethnicity</th>
@@ -157,14 +168,15 @@
       <!-- PPG-1 DI Analysis -->
       <div class="table-wrapper wrapper-ppg1">
         <div class="ppg-section-header">
-          <div>
+          <div class="section-step section-step-results">Step 2 — Review Results</div>
+          <div class="ppg-title-row">
             <h2 id="titlePpgAnalysis">Equity Gap Analysis</h2>
-            <h4 id="subtitlePpgAnalysis">Comparing each group's success rate to all other students combined.</h4>
+            <div class="view-toggle">
+              <button id="ppgViewSimple"     class="vt-btn vt-active">Simple</button>
+              <button id="ppgViewTechnical"  class="vt-btn">Technical</button>
+            </div>
           </div>
-          <div class="view-toggle">
-            <button id="ppgViewSimple"     class="vt-btn vt-active">Simple</button>
-            <button id="ppgViewTechnical"  class="vt-btn">Technical</button>
-          </div>
+          <h4 id="subtitlePpgAnalysis">Comparing each group's success rate to all other students combined.</h4>
         </div>
         <!-- Option C banner -->
         <div id="ppgBanner" class="ppg-banner hidden"></div>
@@ -206,8 +218,8 @@
 
     <!-- ── PPG-1 Chart ───────────────────────────────────────────────────── -->
     <div class="chart-card" id="chartCard" style="display:none">
-      <h2 id="chartTitle">PPG-1 by Subgroup</h2>
-      <p class="chart-subtitle">Bars show the most recent year with data. Red = DI flagged, yellow = below peers, blue = within/above threshold.</p>
+      <h2 id="chartTitle">Equity Gap by Group</h2>
+      <p class="chart-subtitle">Most recent year with data. <span style="color:#c0392b">■</span> Gap detected &nbsp;·&nbsp; <span style="color:#e67e22">■</span> Below average &nbsp;·&nbsp; <span style="color:#2980b9">■</span> On track or above</p>
       <div class="chart-container">
         <canvas id="ppg1Chart"></canvas>
       </div>
@@ -218,6 +230,8 @@
       positive outcomes. A negative gap is flagged only when the observed PPG-1 is at or below the
       subgroup margin of error threshold.
     </p>
+
+    <p class="built-by">Built by Courtney Youngberg &nbsp;·&nbsp; <span id="builtYear"></span></p>
 
   </main>
 
@@ -297,6 +311,8 @@
           <label>Enrolled/Total<select id="mapTotal"></select></label>
           <label>Course/Section <span class="map-optional">(optional)</span><select id="mapCourse"></select></label>
           <label>Retention / 2nd Outcome <span class="map-optional">(optional)</span><select id="mapRetention"></select></label>
+          <label>Discipline / Subject <span class="map-optional">(optional)</span><select id="mapDiscipline"></select></label>
+          <label>Education Goal <span class="map-optional">(optional)</span><select id="mapEdGoal"></select></label>
         </div>
         <div id="rawPreview" class="raw-preview"></div>
       </div>

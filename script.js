@@ -12,10 +12,12 @@ const STORAGE_PREFIX = 'ppg1_';
 // Tab definitions
 // ─────────────────────────────────────────────────────────────────────────────
 const TABS = [
-  { id: 'race',       label: 'Race/Ethnicity',   defaultSubgroups: ['Am Ind/Ntv Alsk','Asian','Black','Hispanic/Latinx','More than one','Unknown','White','',''] },
-  { id: 'gender',     label: 'Gender',            defaultSubgroups: ['Men','Women','Non-binary/Other','Unknown','','','','',''] },
-  { id: 'age',        label: 'Age',               defaultSubgroups: ['Under 18','18–24','25–39','40+','Unknown','','','',''] },
-  { id: 'course',     label: 'By Course',         defaultSubgroups: ['','','','','','','','',''] },
+  { id: 'race',       label: 'Race/Ethnicity',   colLabel: 'Race/Ethnicity',  defaultSubgroups: ['Am Ind/Ntv Alsk','Asian','Black','Hispanic/Latinx','More than one','Unknown','White','',''] },
+  { id: 'gender',     label: 'Gender',            colLabel: 'Gender',          defaultSubgroups: ['Men','Women','Non-binary/Other','Unknown','','','','',''] },
+  { id: 'age',        label: 'Age',               colLabel: 'Age Group',       defaultSubgroups: ['Under 18','18–24','25–39','40+','Unknown','','','',''] },
+  { id: 'discipline', label: 'Discipline',        colLabel: 'Discipline',      defaultSubgroups: ['','','','','','','','',''] },
+  { id: 'edgoal',     label: 'Ed. Goal',          colLabel: 'Education Goal',  defaultSubgroups: ['','','','','','','','',''] },
+  // { id: 'course',     label: 'By Course',         colLabel: 'Course',          defaultSubgroups: ['','','','','','','','',''] },
   // Uncomment to re-enable these tabs:
   // { id: 'disability', label: 'Disability Status', defaultSubgroups: ['Students with Disability','Students without Disability','','','','','','',''] },
   // { id: 'foster',     label: 'Foster Youth',      defaultSubgroups: ['Foster Youth','Non-Foster Youth','','','','','','',''] },
@@ -29,6 +31,7 @@ let activeTabId  = 'race';
 let ppg1Chart    = null;
 let ppgResults   = []; // [col][row] computed results
 let ppgViewMode  = 'simple'; // 'simple' | 'technical'
+let srDisplayMode = 'pct';   // 'pct' | 'counts'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DOMContentLoaded
@@ -37,6 +40,8 @@ document.addEventListener('DOMContentLoaded', () => {
   buildTabBar();
   setupActionButtons();
   setupInputListeners();
+  const yearEl = document.getElementById('builtYear');
+  if (yearEl) yearEl.textContent = new Date().getFullYear();
 
   const sharedState = decodeStateFromUrl();
   if (sharedState) {
@@ -44,6 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
   } else {
     activeTabId = localStorage.getItem(STORAGE_PREFIX + 'activeTab') || 'race';
     updateTabBar();
+    updateTableColumnHeader(activeTabId);
     loadTabState(activeTabId);
   }
 
@@ -81,11 +87,21 @@ function switchTab(tabId) {
   activeTabId = tabId;
   localStorage.setItem(STORAGE_PREFIX + 'activeTab', tabId);
   updateTabBar();
+  updateTableColumnHeader(tabId);
   loadTabState(tabId);
   initializeSubgroups();
   initializeYearHeaders();
   recalculateAll();
-  if (storedRawRows.length) renderFilterBar(); // show/hide course pills based on active tab
+  if (storedRawRows.length) renderFilterBar();
+}
+
+function updateTableColumnHeader(tabId) {
+  const tab = TABS.find(t => t.id === tabId);
+  const label = tab?.colLabel || tab?.label || 'Group';
+  ['numeratorTable','denominatorTable','successRatesTable','ppg1ValuesTable'].forEach(tblId => {
+    const th = document.querySelector(`#${tblId} tr:first-child th:first-child`);
+    if (th) th.textContent = label;
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -166,7 +182,7 @@ function setupInputListeners() {
 
 function setupActionButtons() {
   document.getElementById('btnImport').addEventListener('click', openImportModal);
-  document.getElementById('btnExport').addEventListener('click', exportCSV);
+  document.getElementById('btnExport').addEventListener('click', exportXLSX);
   document.getElementById('btnShare').addEventListener('click', shareLink);
   document.getElementById('btnPrint').addEventListener('click', () => window.print());
   document.getElementById('btnClear').addEventListener('click', clearAll);
@@ -174,6 +190,9 @@ function setupActionButtons() {
   // Simple / Technical view toggle
   document.getElementById('ppgViewSimple').addEventListener('click', () => setPpgViewMode('simple'));
   document.getElementById('ppgViewTechnical').addEventListener('click', () => setPpgViewMode('technical'));
+
+  document.getElementById('srDisplayPct').addEventListener('click', () => setSuccessRateDisplayMode('pct'));
+  document.getElementById('srDisplayCounts').addEventListener('click', () => setSuccessRateDisplayMode('counts'));
 
   // Modal close buttons
   document.getElementById('importClose').addEventListener('click', closeImportModal);
@@ -242,6 +261,23 @@ function encodeStateToUrl() {
     n: [],
     d: [],
   };
+
+  // If raw data is loaded, embed it for full 1:1 fidelity (course pills, all tabs, active filter)
+  if (storedRawRows.length > 0) {
+    state.raw = {
+      rows:          storedRawRows,
+      colMap:        storedRawColMap,
+      courseCol:     storedCourseCol,
+      disciplineCol: storedDisciplineCol,
+      edGoalCol:     storedEdGoalCol,
+      outcomes:      storedOutcomes,
+      course:        activeCourseValue,
+      outcomeIdx:    activeOutcomeIdx,
+    };
+  } else if (activeCourseValue) {
+    state.c = activeCourseValue; // fallback: just label the filter
+  }
+
   for (let row = 0; row < ROW_COUNT; row++) {
     state.g.push(document.getElementById(`inputSubgroup-${row}`)?.value || '');
     const nr = [], dr = [];
@@ -282,6 +318,28 @@ function applySharedState(state) {
     }
   }
   saveTabState(activeTabId);
+
+  if (state.raw) {
+    // Full 1:1 restore — raw rows, all tabs, course pills, active filter
+    storedRawRows       = state.raw.rows         || [];
+    storedRawColMap     = state.raw.colMap        || {};
+    storedCourseCol     = state.raw.courseCol      ?? -1;
+    storedDisciplineCol = state.raw.disciplineCol  ?? -1;
+    storedEdGoalCol     = state.raw.edGoalCol      ?? -1;
+    storedOutcomes      = state.raw.outcomes       || ['Success Rate'];
+    activeOutcomeIdx    = state.raw.outcomeIdx     || 0;
+    activeCourseValue   = state.raw.course         || '';
+    populateTabsFromRows(storedRawRows, storedRawColMap);
+    renderFilterBar();
+  } else if (state.c) {
+    // Fallback: just show a label if only the filter name was encoded
+    activeCourseValue = state.c;
+    const bar = document.getElementById('courseFilterBar');
+    if (bar) {
+      bar.innerHTML = `<span class="course-shared-note">📂 Filtered to course: <strong>${state.c}</strong></span>`;
+      bar.classList.remove('hidden');
+    }
+  }
 }
 
 function shareLink() {
@@ -298,6 +356,7 @@ function shareLink() {
 // ─────────────────────────────────────────────────────────────────────────────
 function initializeSubgroups() {
   document.querySelectorAll('#numeratorTable .inputSubgroup').forEach((input, row) => {
+    input.placeholder = 'Add group…';
     updateSubgroup(row, input.value);
   });
 }
@@ -311,6 +370,11 @@ function updateSubgroup(row, value) {
   ids.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = value;
+  });
+  // Mark rows with no subgroup name as "empty" so CSS can dim them
+  const isEmpty = !value.trim();
+  [`inputSubgroup-${row}`, `denominatorSubgroup-${row}`].forEach(id => {
+    document.getElementById(id)?.closest('tr')?.classList.toggle('empty-row', isEmpty);
   });
 }
 
@@ -361,6 +425,14 @@ function setPpgViewMode(mode) {
   }
 }
 
+function setSuccessRateDisplayMode(mode) {
+  srDisplayMode = mode;
+  document.getElementById('srDisplayPct').classList.toggle('vt-active', mode === 'pct');
+  document.getElementById('srDisplayCounts').classList.toggle('vt-active', mode === 'counts');
+  const grid = buildDataGrid();
+  calculateSuccessRates(grid);
+}
+
 function buildDataGrid() {
   return Array.from({ length: ROW_COUNT }, (_, row) =>
     Array.from({ length: COLUMN_COUNT }, (_, col) => readCell(row, col))
@@ -409,7 +481,11 @@ function calculateSuccessRates(grid) {
       if (!cell.hasPopulation) continue;
       const rate = (cell.numerator / cell.denominator) * 100;
       out.className = 'rate-cell';
-      out.innerHTML = `<div class="rate-value">${formatPercent(rate)}</div><div class="rate-meta">${cell.numerator} / ${cell.denominator}</div>`;
+      if (srDisplayMode === 'counts') {
+        out.innerHTML = `<div class="rate-value">${cell.numerator} / ${cell.denominator}</div>`;
+      } else {
+        out.innerHTML = `<div class="rate-value">${formatPercent(rate)}</div>`;
+      }
     }
   }
 }
@@ -437,7 +513,9 @@ function calculatePpgAnalysis(grid) {
       if (cell.denominator <= MINIMUM_REPORTABLE_N) {
         renderInfoCell(out,
           ppgViewMode === 'simple' ? 'Not enough data' : 'Insufficient data',
-          `n = ${cell.denominator}. CCCCO advises against estimating DI when n ≤ 10.`,
+          ppgViewMode === 'simple'
+            ? 'Too few students in this group to calculate reliably.'
+            : `n = ${cell.denominator}. CCCCO advises against estimating DI when n ≤ 10.`,
           'status-muted');
         results[col][row] = { label: 'Insufficient data', status: 'status-muted' };
         continue;
@@ -705,8 +783,10 @@ function autoDetectColumns(header) {
     age:     find('agegroup', 'age'),
     success: find('success', 'successful', 'complete', 'pass'),
     total:   find('census', 'headcount', 'enrolled', 'total', 'count'),
-    course:     find('course', 'section', 'crn', 'class', 'discipline', 'subject', 'program'),
+    course:     find('course', 'section', 'crn', 'class', 'program'),
     retention:  find('retention', 'retain', 'persist', 'endofterm'),
+    discipline: find('discipline', 'subject', 'dept', 'department'),
+    edgoal:     find('educationgoal', 'edgoal', 'goal', 'objective', 'intendedgoal'),
   };
 }
 
@@ -716,10 +796,14 @@ let rawHeader = [];
 // Stored after import — used by course/outcome filters to re-aggregate without re-importing
 let storedRawRows    = [];
 let storedRawColMap  = {};   // { yearCol, raceCol, genderCol, ageCol, successCol, totalCol }
-let storedCourseCol  = -1;
+let storedCourseCol      = -1;
+let storedDisciplineCol  = -1;
+let storedEdGoalCol      = -1;
 let storedOutcomes   = [];   // [{ col, label }, ...] — outcomes user can switch between
 let activeOutcomeIdx = 0;    // index into storedOutcomes
-let activeCourseValue = '';  // '' = All Courses
+let activeCourseValue     = '';
+let activeDisciplineValue = '';
+let activeEdGoalValue     = '';
 
 function parseRaw(text) {
   // Always keep header row (raw import needs it for column detection)
@@ -798,9 +882,9 @@ function loadRawRows(allRows, fileName) {
 function triggerColumnDetection() {
   const detected = autoDetectColumns(rawHeader);
 
-  ['mapYear','mapRace','mapGender','mapAge','mapSuccess','mapTotal','mapCourse','mapRetention'].forEach((selectId, i) => {
+  ['mapYear','mapRace','mapGender','mapAge','mapSuccess','mapTotal','mapCourse','mapRetention','mapDiscipline','mapEdGoal'].forEach((selectId, i) => {
     const sel = document.getElementById(selectId);
-    const keyMap = ['year','race','gender','age','success','total','course','retention'];
+    const keyMap = ['year','race','gender','age','success','total','course','retention','discipline','edgoal'];
     const detectedIdx = detected[keyMap[i]];
     sel.innerHTML = '<option value="-1">— not used —</option>' +
       rawHeader.map((col, idx) =>
@@ -884,13 +968,17 @@ function applyRawImport() {
   const ageCol       = parseInt(document.getElementById('mapAge').value);
   const successCol   = parseInt(document.getElementById('mapSuccess').value);
   const totalCol     = parseInt(document.getElementById('mapTotal').value);
-  const courseCol    = parseInt(document.getElementById('mapCourse').value);
-  const retentionCol = parseInt(document.getElementById('mapRetention').value);
+  const courseCol      = parseInt(document.getElementById('mapCourse').value);
+  const retentionCol   = parseInt(document.getElementById('mapRetention').value);
+  const disciplineCol  = parseInt(document.getElementById('mapDiscipline').value);
+  const edGoalCol      = parseInt(document.getElementById('mapEdGoal').value);
 
   // Store raw data + column map for dynamic re-aggregation
-  storedRawRows    = rawParsedRows.slice();
-  storedRawColMap  = { yearCol, raceCol, genderCol, ageCol, successCol, totalCol };
-  storedCourseCol  = courseCol;
+  storedRawRows        = rawParsedRows.slice();
+  storedRawColMap      = { yearCol, raceCol, genderCol, ageCol, successCol, totalCol };
+  storedCourseCol      = courseCol;
+  storedDisciplineCol  = disciplineCol;
+  storedEdGoalCol      = edGoalCol;
   activeCourseValue = '';
 
   // Build outcomes list
@@ -918,7 +1006,9 @@ function applyRawImport() {
     raceCol        >= 0 && 'Race/Ethnicity',
     genderCol      >= 0 && 'Gender',
     ageCol         >= 0 && 'Age',
-    storedCourseCol >= 0 && 'By Course',
+    storedCourseCol     >= 0 && 'Course filter',
+    storedDisciplineCol >= 0 && 'Discipline',
+    storedEdGoalCol     >= 0 && 'Ed. Goal',
   ].filter(Boolean);
   closeImportModal();
   showToast(`Imported into: ${tabNames.join(', ')}`);
@@ -927,18 +1017,24 @@ function applyRawImport() {
 // Aggregate all demographic tabs from a row set + effective column map
 function populateTabsFromRows(rows, colMap) {
   const { yearCol, raceCol, genderCol, ageCol, successCol, totalCol } = colMap;
-  if (raceCol        >= 0) saveAggToTab('race',   aggregateRaw(rows,           yearCol, raceCol,        successCol, totalCol));
-  if (genderCol      >= 0) saveAggToTab('gender', aggregateRaw(rows,           yearCol, genderCol,      successCol, totalCol, GENDER_LABELS));
-  if (ageCol         >= 0) saveAggToTab('age',    aggregateRaw(rows,           yearCol, ageCol,         successCol, totalCol));
-  // Course tab always aggregates over ALL rows (never filtered by course — course IS the dimension)
-  if (storedCourseCol >= 0) saveAggToTab('course', aggregateRaw(storedRawRows, yearCol, storedCourseCol, successCol, totalCol));
+  if (raceCol           >= 0) saveAggToTab('race',       aggregateRaw(rows, yearCol, raceCol,          successCol, totalCol));
+  if (genderCol         >= 0) saveAggToTab('gender',     aggregateRaw(rows, yearCol, genderCol,        successCol, totalCol, GENDER_LABELS));
+  if (ageCol            >= 0) saveAggToTab('age',        aggregateRaw(rows, yearCol, ageCol,           successCol, totalCol));
+  if (storedDisciplineCol >= 0) saveAggToTab('discipline', aggregateRaw(rows, yearCol, storedDisciplineCol, successCol, totalCol));
+  if (storedEdGoalCol     >= 0) saveAggToTab('edgoal',     aggregateRaw(rows, yearCol, storedEdGoalCol,     successCol, totalCol));
+  // Course column used for filter pills only — no separate tab
 }
 
-// Shared re-aggregation — applies both active outcome and active course filter
-function reAggregate() {
-  const rows = activeCourseValue
+// Return rows after applying the active course filter
+function getFilteredRows() {
+  return activeCourseValue
     ? storedRawRows.filter(r => r[storedCourseCol] === activeCourseValue)
     : storedRawRows;
+}
+
+// Shared re-aggregation — applies all active filters
+function reAggregate() {
+  const rows = getFilteredRows();
 
   const effectiveSuccessCol = storedOutcomes[activeOutcomeIdx]?.col ?? storedRawColMap.successCol;
 
@@ -976,29 +1072,40 @@ function renderFilterBar() {
     });
   }
 
-  // Course pills — only shown if course column was mapped
-  // Don't show course pills on the By Course tab — course IS the dimension there
-  if (storedCourseCol >= 0 && activeTabId !== 'course') {
-    if (hasContent) {
-      const sep = document.createElement('span');
-      sep.className = 'cf-sep';
-      sep.textContent = '·';
-      bar.appendChild(sep);
-    }
-    hasContent = true;
+  // Helper: separator between filter groups
+  const addSep = () => {
+    if (!hasContent) return;
+    const sep = document.createElement('span');
+    sep.className = 'cf-sep';
+    sep.textContent = '·';
+    bar.appendChild(sep);
+  };
 
+  // Helper: add a labeled group of pills
+  const addPillGroup = (label, type, values, activeValue, colIdx) => {
+    addSep();
+    hasContent = true;
     const lbl = document.createElement('span');
     lbl.className = 'cf-label';
-    lbl.textContent = 'Course:';
+    lbl.textContent = label + ':';
     bar.appendChild(lbl);
-
-    addFilterPill(bar, `All (${storedRawRows.length})`, 'course', '', activeCourseValue === '');
-
-    const courses = [...new Set(storedRawRows.map(r => r[storedCourseCol]).filter(Boolean))].sort();
-    courses.forEach(course => {
-      const count = storedRawRows.filter(r => r[storedCourseCol] === course).length;
-      addFilterPill(bar, `${course} (${count})`, 'course', course, activeCourseValue === course);
+    const total = colIdx >= 0
+      ? storedRawRows.filter(r => !activeCourseValue     || r[storedCourseCol]     === activeCourseValue)
+                     .filter(r => !activeDisciplineValue || r[storedDisciplineCol] === activeDisciplineValue)
+                     .filter(r => !activeEdGoalValue     || r[storedEdGoalCol]     === activeEdGoalValue)
+                     .length
+      : storedRawRows.length;
+    addFilterPill(bar, `All (${total})`, type, '', activeValue === '');
+    values.forEach(v => {
+      const count = storedRawRows.filter(r => r[colIdx] === v).length;
+      addFilterPill(bar, `${v} (${count})`, type, v, activeValue === v);
     });
+  };
+
+  // Course pills
+  if (storedCourseCol >= 0) {
+    const courses = [...new Set(storedRawRows.map(r => r[storedCourseCol]).filter(Boolean))].sort();
+    addPillGroup('Course', 'course', courses, activeCourseValue, storedCourseCol);
   }
 
   bar.classList.toggle('hidden', !hasContent);
@@ -1011,8 +1118,10 @@ function addFilterPill(bar, label, type, value, active) {
   btn.dataset.filterType  = type;
   btn.dataset.filterValue = value;
   btn.addEventListener('click', () => {
-    if (type === 'outcome') selectOutcome(parseInt(value));
-    else selectCourse(value);
+    if      (type === 'outcome')    selectOutcome(parseInt(value));
+    else if (type === 'course')     selectCourse(value);
+    else if (type === 'discipline') selectDiscipline(value);
+    else if (type === 'edgoal')     selectEdGoal(value);
   });
   bar.appendChild(btn);
 }
@@ -1059,8 +1168,21 @@ function selectCourse(courseValue) {
   activeCourseValue = courseValue;
   renderFilterBar();
   reAggregate();
-  const rows = courseValue ? storedRawRows.filter(r => r[storedCourseCol] === courseValue) : storedRawRows;
-  showToast(`Course: ${courseValue || 'All'} — ${rows.length} records`);
+  showToast(`Course: ${courseValue || 'All'} — ${getFilteredRows().length} records`);
+}
+
+function selectDiscipline(value) {
+  activeDisciplineValue = value;
+  renderFilterBar();
+  reAggregate();
+  showToast(`Discipline: ${value || 'All'} — ${getFilteredRows().length} records`);
+}
+
+function selectEdGoal(value) {
+  activeEdGoalValue = value;
+  renderFilterBar();
+  reAggregate();
+  showToast(`Ed. Goal: ${value || 'All'} — ${getFilteredRows().length} records`);
 }
 
 function saveAggToTab(tabId, agg) {
@@ -1227,56 +1349,96 @@ function applyPastedData(rows, valuePrefix, subgroupPrefix) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CSV Export
+// Excel Export (multi-sheet)
 // ─────────────────────────────────────────────────────────────────────────────
-function exportCSV() {
-  const years = Array.from({ length: COLUMN_COUNT }, (_, i) =>
-    document.getElementById(`year-${i}`)?.value || `Year ${i + 1}`
-  );
-  const tab = TABS.find(t => t.id === activeTabId);
+function exportXLSX() {
+  function doExport() {
+    const years = Array.from({ length: COLUMN_COUNT }, (_, i) =>
+      document.getElementById(`year-${i}`)?.value || `Year ${i + 1}`
+    );
+    const tab = TABS.find(t => t.id === activeTabId);
+    const colLabel = tab?.colLabel || 'Group';
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const tabLabel = (tab?.label || 'results').replace(/\s+/g, '-');
 
-  const headerRow = ['Subgroup',
-    ...years.flatMap(y => [`${y} Successes`, `${y} Total`, `${y} Rate`, `${y} PPG-1`, `${y} Trend`, `${y} Status`])
-  ];
-  const dataRows = [];
+    // Collect populated row indices
+    const rowIndices = [];
+    for (let row = 0; row < ROW_COUNT; row++) {
+      if (document.getElementById(`inputSubgroup-${row}`)?.value?.trim()) rowIndices.push(row);
+    }
+    const subgroups = rowIndices.map(row => document.getElementById(`inputSubgroup-${row}`)?.value || '');
 
-  for (let row = 0; row < ROW_COUNT; row++) {
-    const sg = document.getElementById(`inputSubgroup-${row}`)?.value || '';
-    if (!sg) continue;
-    const cols = [];
-    for (let col = 0; col < COLUMN_COUNT; col++) {
-      const n = document.getElementById(`inputNumerator-${row}-${col}`)?.value || '';
-      const d = document.getElementById(`inputDenominator-${row}-${col}`)?.value || '';
-      const r = ppgResults[col]?.[row];
-      const nv = parseFloat(n), dv = parseFloat(d);
-      const rate = (n && d && dv > 0) ? (nv / dv * 100).toFixed(1) + '%' : '';
-      const ppg1Str = r?.ppg1 !== undefined ? r.ppg1.toFixed(1) + '%' : (r?.label || '');
-      // Trend
-      let trend = '';
-      if (col > 0 && r?.ppg1 !== undefined) {
-        const prev = ppgResults[col - 1]?.[row];
-        if (prev?.ppg1 !== undefined) {
-          const d2 = r.ppg1 - prev.ppg1;
-          trend = Math.abs(d2) < 0.5 ? 'Stable' : d2 > 0 ? 'Improving' : 'Worsening';
+    function toSheet(header, rows) {
+      return XLSX.utils.aoa_to_sheet([header, ...rows]);
+    }
+
+    // Sheet 1 — DI Analysis (PPG-1 value + status per year)
+    const diHeader = [colLabel, ...years.flatMap(y => [`${y} PPG-1`, `${y} Status`])];
+    const diRows = rowIndices.map((row, i) => {
+      const cells = [subgroups[i]];
+      for (let col = 0; col < COLUMN_COUNT; col++) {
+        const r = ppgResults[col]?.[row];
+        if (r?.ppg1 !== undefined) {
+          cells.push(parseFloat(r.ppg1.toFixed(2)), r.label || '');
+        } else {
+          cells.push('', r?.label || '');
         }
       }
-      cols.push(n, d, rate, ppg1Str, trend, r?.label || '');
-    }
-    dataRows.push([sg, ...cols]);
+      return cells;
+    });
+
+    // Sheet 2 — Success Rates (%)
+    const rateHeader = [colLabel, ...years];
+    const rateRows = rowIndices.map((row, i) => {
+      const cells = [subgroups[i]];
+      for (let col = 0; col < COLUMN_COUNT; col++) {
+        const n = parseFloat(document.getElementById(`inputNumerator-${row}-${col}`)?.value || '');
+        const d = parseFloat(document.getElementById(`inputDenominator-${row}-${col}`)?.value || '');
+        cells.push((n && d && d > 0) ? parseFloat((n / d * 100).toFixed(2)) : '');
+      }
+      return cells;
+    });
+
+    // Sheet 3 — Students Who Succeeded (numerator)
+    const numHeader = [colLabel, ...years];
+    const numRows = rowIndices.map((row, i) => {
+      const cells = [subgroups[i]];
+      for (let col = 0; col < COLUMN_COUNT; col++) {
+        const v = document.getElementById(`inputNumerator-${row}-${col}`)?.value;
+        cells.push(v ? parseFloat(v) : '');
+      }
+      return cells;
+    });
+
+    // Sheet 4 — Total Students Enrolled (denominator)
+    const denHeader = [colLabel, ...years];
+    const denRows = rowIndices.map((row, i) => {
+      const cells = [subgroups[i]];
+      for (let col = 0; col < COLUMN_COUNT; col++) {
+        const v = document.getElementById(`inputDenominator-${row}-${col}`)?.value;
+        cells.push(v ? parseFloat(v) : '');
+      }
+      return cells;
+    });
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, toSheet(diHeader, diRows),  'DI Analysis');
+    XLSX.utils.book_append_sheet(wb, toSheet(rateHeader, rateRows), 'Success Rates');
+    XLSX.utils.book_append_sheet(wb, toSheet(numHeader, numRows),   'Students Succeeded');
+    XLSX.utils.book_append_sheet(wb, toSheet(denHeader, denRows),   'Total Enrolled');
+
+    XLSX.writeFile(wb, `PPG1-${tabLabel}-${dateStr}.xlsx`);
+    showToast('Excel file downloaded!');
   }
 
-  const csv = [headerRow, ...dataRows]
-    .map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(','))
-    .join('\n');
-
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `PPG1-${(tab?.label || 'results').replace(/\s+/g,'-')}-${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('CSV downloaded!');
+  if (window.XLSX) {
+    doExport();
+  } else {
+    const script = document.createElement('script');
+    script.src = '/xlsx.full.min.js';
+    script.onload = doExport;
+    document.head.appendChild(script);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1327,9 +1489,11 @@ function clearAll() {
   // Reset raw data state and hide filter bar
   storedRawRows   = [];
   storedRawColMap = {};
-  storedCourseCol = -1;
-  storedOutcomes  = [];
-  activeOutcomeIdx  = 0;
+  storedCourseCol       = -1;
+  storedDisciplineCol   = -1;
+  storedEdGoalCol       = -1;
+  storedOutcomes        = [];
+  activeOutcomeIdx      = 0;
   activeCourseValue = '';
   document.getElementById('courseFilterBar')?.classList.add('hidden');
 
