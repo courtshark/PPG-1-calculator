@@ -2,7 +2,7 @@
 
 A browser-based tool for Orange Coast College that measures **Disproportionate Impact (DI)** across student subgroups using the official CCCCO **PPG-1 (Percentage Point Gap)** methodology.
 
-**Live site →** [equity-gap.orangecoastcollege.edu](https://equity-gap.orangecoastcollege.edu)
+**Live site →** [https://ppg-1.vercel.app/](https://ppg-1.vercel.app/)
 
 ---
 
