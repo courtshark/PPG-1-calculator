@@ -449,6 +449,15 @@ tr.empty-row td input:focus {
 .rate-meta,.ppg-meta,.ppg-note { margin-top: .2rem; color: var(--muted); font-size: .78rem; line-height: 1.35; }
 .analysis-cell .status-badge { margin-top: .45rem; }
 
+/* Success-rate table totals (All Years column + All Students row) */
+#successRatesTable th.sr-total-col { background: var(--navy); color: #fff; }
+#successRatesTable td.sr-total-col,
+#successRatesTable .sr-total-row td { background: rgba(15, 32, 64, .05); }
+#successRatesTable .sr-total-row td .rate-value,
+#successRatesTable td.sr-total-col .rate-value { font-weight: 800; }
+#successRatesTable .sr-total-row td { border-top: 2px solid var(--navy); }
+.sr-total-label { font-weight: 700; color: var(--navy); padding: .55rem .75rem; }
+
 .status-di    { background: linear-gradient(180deg,#fff1ef 0%,#ffe2df 100%); }
 .status-watch { background: linear-gradient(180deg,#fffaf0 0%,#fff1c9 100%); }
 .status-good,

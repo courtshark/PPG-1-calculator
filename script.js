@@ -471,23 +471,49 @@ function syncInputState(nEl, dEl, invalidReason) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Success rates rendering
 // ─────────────────────────────────────────────────────────────────────────────
+function renderRateValue(out, n, d, extraClass) {
+  if (!out) return;
+  out.className = `rate-cell${extraClass ? ' ' + extraClass : ''}`;
+  out.innerHTML = srDisplayMode === 'counts'
+    ? `<div class="rate-value">${n} / ${d}</div>`
+    : `<div class="rate-value">${formatPercent((n / d) * 100)}</div>`;
+}
+
 function calculateSuccessRates(grid) {
+  const colTotals = Array.from({ length: COLUMN_COUNT }, () => ({ n: 0, d: 0 }));
+  let grandN = 0, grandD = 0;
+
   for (let row = 0; row < ROW_COUNT; row++) {
+    let rowN = 0, rowD = 0;
     for (let col = 0; col < COLUMN_COUNT; col++) {
       const cell = grid[row][col];
       const out = document.getElementById(`successRate-${row}-${col}`);
       clearOutputCell(out);
       if (cell.isInvalid) { renderInfoCell(out, 'Check counts', cell.invalidReason, 'status-invalid'); continue; }
       if (!cell.hasPopulation) continue;
-      const rate = (cell.numerator / cell.denominator) * 100;
-      out.className = 'rate-cell';
-      if (srDisplayMode === 'counts') {
-        out.innerHTML = `<div class="rate-value">${cell.numerator} / ${cell.denominator}</div>`;
-      } else {
-        out.innerHTML = `<div class="rate-value">${formatPercent(rate)}</div>`;
-      }
+      renderRateValue(out, cell.numerator, cell.denominator);
+      // accumulate totals (only valid, populated cells)
+      rowN += cell.numerator; rowD += cell.denominator;
+      colTotals[col].n += cell.numerator; colTotals[col].d += cell.denominator;
+      grandN += cell.numerator; grandD += cell.denominator;
     }
+    // Per-group "All Years" total
+    const rowOut = document.getElementById(`successRateTotal-${row}`);
+    clearOutputCell(rowOut);
+    if (rowD > 0) renderRateValue(rowOut, rowN, rowD, 'sr-total-col');
   }
+
+  // Per-year "All Students" totals
+  for (let col = 0; col < COLUMN_COUNT; col++) {
+    const cOut = document.getElementById(`successRateColTotal-${col}`);
+    clearOutputCell(cOut);
+    if (colTotals[col].d > 0) renderRateValue(cOut, colTotals[col].n, colTotals[col].d, 'sr-total-row-cell');
+  }
+
+  // Grand total
+  const gOut = document.getElementById('successRateGrandTotal');
+  clearOutputCell(gOut);
+  if (grandD > 0) renderRateValue(gOut, grandN, grandD, 'sr-total-col sr-total-row-cell');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
