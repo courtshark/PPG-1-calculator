@@ -1277,17 +1277,21 @@ function downloadTemplate() {
 
     // ── Sheet 1: Template data ──
     const templateRows = [
-      ['AcademicYear','RaceEthnicityAncestry','Gender','AgeGroup','Success','EnrolledAtCensus','Course','EndOfTermRetention'],
-      ['2022-23','Asian',    'F','20 to 24',  1,1,'CIS A111',1],
-      ['2022-23','Hispanic', 'M','19 or less',0,1,'CIS A111',1],
-      ['2022-23','White',    'F','25 to 39',  1,1,'CIS A111',1],
-      ['2022-23','Black',    'M','20 to 24',  0,1,'BUS A234',0],
-      ['2023-24','Asian',    'M','20 to 24',  1,1,'CIS A111',1],
-      ['2023-24','Hispanic', 'F','19 or less',1,1,'BUS A234',1],
+      ['AcademicYear','RaceEthnicityAncestry','Gender','AgeGroup','Success','EnrolledAtCensus','Course','Discipline','EducationGoal','EndOfTermRetention'],
+      ['2022-23','Asian',    'F','20 to 24',  1,1,'CIS A111','Computer Info Sys','AA Degree w/Transfer Bach.', 1],
+      ['2022-23','Hispanic', 'M','19 or less',0,1,'CIS A111','Computer Info Sys','Undecided',                  1],
+      ['2022-23','White',    'F','25 to 39',  1,1,'CIS A111','Computer Info Sys','Two Yr. Vocational Degree',  1],
+      ['2022-23','Black',    'M','20 to 24',  0,1,'BUS A234','Business',         'AA Degree w/Transfer Bach.', 0],
+      ['2022-23','Hispanic', 'F','20 to 24',  1,1,'BUS A234','Business',         'AA Degree w/out Transfer',   1],
+      ['2023-24','Asian',    'M','20 to 24',  1,1,'CIS A111','Computer Info Sys','AA Degree w/Transfer Bach.', 1],
+      ['2023-24','Hispanic', 'F','19 or less',1,1,'BUS A234','Business',         'AA Degree w/Transfer Bach.', 1],
+      ['2023-24','White',    'M','40+',       0,1,'COUN A104','Counseling',      'Undecided',                  1],
+      ['2023-24','Filipino', 'F','20 to 24',  1,1,'COUN A104','Counseling',      'Two Yr. Vocational Degree',  1],
+      ['2023-24','Black',    'F','25 to 39',  1,1,'BUS A234','Business',         'AA Degree w/out Transfer',   0],
     ];
     const ws1 = XLSX.utils.aoa_to_sheet(templateRows);
     ws1['!cols'] = [
-      {wch:12},{wch:22},{wch:10},{wch:14},{wch:10},{wch:18},{wch:12},{wch:22}
+      {wch:12},{wch:22},{wch:10},{wch:14},{wch:10},{wch:18},{wch:12},{wch:20},{wch:28},{wch:22}
     ];
     XLSX.utils.book_append_sheet(wb, ws1, 'Template');
 
@@ -1303,6 +1307,8 @@ function downloadTemplate() {
       ['Success',              'Required', '1 = student achieved the success outcome, 0 = did not.',           '1  |  0'],
       ['EnrolledAtCensus',     'Required', '1 = enrolled at census (always 1 — one row per enrollment).',      '1'],
       ['Course',               'Optional', 'Course or section code. Enables the Course filter in the UI.',     'CIS A111, BUS A234, CHT A015N'],
+      ['Discipline',           'Optional', 'Subject area / department. Enables the Discipline analysis tab.',  'Computer Info Sys, Business, Counseling'],
+      ['EducationGoal',        'Optional', 'Student education goal. Enables the Ed. Goal analysis tab.',       'AA Degree w/Transfer Bach., Two Yr. Vocational Degree, Undecided'],
       ['EndOfTermRetention',   'Optional', '1 = student was retained through end of term, 0 = withdrew/dropped.','1  |  0'],
       ['','','',''],
       ['Key Notes','','',''],
